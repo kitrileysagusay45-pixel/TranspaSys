@@ -12,7 +12,6 @@ const userLinks = [
   { href: '/user/budgets', icon: 'bi-cash-coin', label: 'Budget' },
   { href: '/user/events', icon: 'bi-calendar-event', label: 'Events' },
   { href: '/user/events/my-events', icon: 'bi-bookmark', label: 'My Events' },
-  { href: '/user/announcements', icon: 'bi-megaphone', label: 'Announcements' },
   { href: '/user/chatbot', icon: 'bi-robot', label: 'AI Chatbot' },
 ];
 

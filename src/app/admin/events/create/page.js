@@ -3,20 +3,38 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { notifyResidentsAction } from '@/app/actions/email';
 
 export default function CreateEvent() {
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({ title: '', description: '', event_date: '', location: '', max_participants: '', status: 'upcoming' });
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const { data: { user } } = await supabase.auth.getUser();
     const insert = { ...form, max_participants: form.max_participants ? parseInt(form.max_participants) : null };
-    await supabase.from('events').insert(insert);
-    if (user) await supabase.from('activities').insert({ user_id: user.id, action: 'Created new event', type: 'event_created', subject: form.title });
+    const { error: insertError } = await supabase.from('events').insert(insert);
+    
+    if (insertError) {
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (user) {
+      await supabase.from('activities').insert({ user_id: user.id, action: 'Created new event', type: 'event_created', subject: form.title });
+      
+      // Notify residents
+      await notifyResidentsAction(
+        `New Event: ${form.title}`,
+        `A new event "${form.title}" has been scheduled for ${new Date(form.event_date).toLocaleDateString()}. Location: ${form.location}.`
+      );
+    }
     router.push('/admin/events');
   }
 
@@ -28,6 +46,13 @@ export default function CreateEvent() {
           <h1 className="page-title"><span>Create</span> Event</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
         </div>
+
+        {error && (
+          <div className="alert alert-danger mb-4">
+            <i className="bi bi-exclamation-triangle"></i>
+            <div className="alert-content"><strong>Error:</strong> {error}</div>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-section">
             <div className="form-section-title"><i className="bi bi-calendar-event"></i> Event Details</div>

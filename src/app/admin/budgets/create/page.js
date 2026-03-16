@@ -3,20 +3,41 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { notifyResidentsAction } from '@/app/actions/email';
 
 export default function CreateBudget() {
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({ category: '', allocated_amount: '', spent_amount: '0', year: new Date().getFullYear(), description: '' });
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('budgets').insert({ ...form, allocated_amount: parseFloat(form.allocated_amount), spent_amount: parseFloat(form.spent_amount || 0) });
+    const { error: insertError } = await supabase.from('budgets').insert({ 
+      ...form, 
+      allocated_amount: parseFloat(form.allocated_amount), 
+      spent_amount: parseFloat(form.spent_amount || 0) 
+    });
+
+    if (insertError) {
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
     if (user) {
       await supabase.from('activities').insert({ user_id: user.id, action: 'Created new budget', type: 'budget_created', subject: form.category });
+      
+      // Notify residents
+      await notifyResidentsAction(
+        `Budget Update: ${form.category}`,
+        `A new budget allocation of ₱${parseFloat(form.allocated_amount).toLocaleString()} has been added for ${form.category} (${form.year}).`
+      );
     }
     router.push('/admin/budgets');
   }
@@ -29,6 +50,13 @@ export default function CreateBudget() {
           <h1 className="page-title"><span>Create</span> Budget</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
         </div>
+
+        {error && (
+          <div className="alert alert-danger mb-4">
+            <i className="bi bi-exclamation-triangle"></i>
+            <div className="alert-content"><strong>Error:</strong> {error}</div>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-section">
             <div className="form-section-title"><i className="bi bi-cash-coin"></i> Budget Details</div>

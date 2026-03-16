@@ -3,23 +3,42 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { notifyResidentsAction } from '@/app/actions/email';
 
 export default function CreateAnnouncement() {
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({ title: '', content: '', is_published: true });
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('announcements').insert({
+    const { error: insertError } = await supabase.from('announcements').insert({
       ...form,
       created_by: user.id,
       published_at: form.is_published ? new Date().toISOString() : null,
     });
+
+    if (insertError) {
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
     if (user) await supabase.from('activities').insert({ user_id: user.id, action: 'Posted new announcement', type: 'announcement_created', subject: form.title });
+    
+    // Notify residents
+    if (form.is_published) {
+      await notifyResidentsAction(
+        `New Announcement: ${form.title}`,
+        `A new announcement has been posted: ${form.content.substring(0, 100)}...`
+      );
+    }
+
     router.push('/admin/announcements');
   }
 
@@ -31,6 +50,13 @@ export default function CreateAnnouncement() {
           <h1 className="page-title"><span>Create</span> Announcement</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
         </div>
+
+        {error && (
+          <div className="alert alert-danger mb-4">
+            <i className="bi bi-exclamation-triangle"></i>
+            <div className="alert-content"><strong>Error:</strong> {error}</div>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-section">
             <div className="form-section-title"><i className="bi bi-megaphone"></i> Announcement Details</div>

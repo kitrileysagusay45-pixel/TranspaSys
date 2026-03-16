@@ -8,7 +8,11 @@ CREATE TABLE IF NOT EXISTS public.users (
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'sk', 'treasurer')),
-  is_approved BOOLEAN NOT NULL DEFAULT true,
+  is_approved BOOLEAN NOT NULL DEFAULT false,
+  address TEXT,
+  purok TEXT,
+  contact_number TEXT,
+  email_verified BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -95,7 +99,10 @@ ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
 -- Users: Everyone can read, users can update own profile
 CREATE POLICY "Users can view all profiles" ON public.users FOR SELECT USING (true);
 CREATE POLICY "Users can insert own profile" ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update all profiles" ON public.users FOR UPDATE USING (true);
+CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Admins can manage all profiles" ON public.users FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'sk', 'treasurer'))
+);
 
 -- Budgets: Everyone can read, admins can manage (simplified: auth users can manage)
 CREATE POLICY "Anyone can read budgets" ON public.budgets FOR SELECT USING (true);

@@ -14,7 +14,6 @@ export default function AdminUsers() {
     const { data } = await supabase
       .from('users')
       .select('*')
-      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     setUsers(data || []);
     setLoading(false);
@@ -44,9 +43,9 @@ export default function AdminUsers() {
   async function handleDelete(user) {
     if (!confirm(`Are you sure you want to delete ${user.name}? This will remove their access to the system.`)) return;
     
-    await supabase.from('users').update({ deleted_at: new Date().toISOString() }).eq('id', user.id);
+    await supabase.from('users').delete().eq('id', user.id);
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) await supabase.from('activities').insert({ user_id: authUser.id, action: 'Soft deleted user account', type: 'user_deleted', subject: user.name });
+    if (authUser) await supabase.from('activities').insert({ user_id: authUser.id, action: 'Deleted user account', type: 'user_deleted', subject: user.name });
     loadUsers();
   }
 
@@ -68,14 +67,17 @@ export default function AdminUsers() {
           <div className="card-body">
             <div className="table-wrapper">
               <table>
-                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Name</th><th>Email</th><th>Address</th><th>Purok</th><th>Contact</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                   {users.length === 0 ? (
-                    <tr><td colSpan="5" className="text-center text-muted">No users found</td></tr>
+                    <tr><td colSpan="8" className="text-center text-muted">No users found</td></tr>
                   ) : users.map((u) => (
                     <tr key={u.id}>
                       <td className="td-bold">{u.name}</td>
                       <td>{u.email}</td>
+                      <td>{u.address || 'N/A'}</td>
+                      <td>{u.purok || 'N/A'}</td>
+                      <td>{u.contact_number || 'N/A'}</td>
                       <td>{roleBadge(u.role)}</td>
                       <td>{u.is_approved ? <span className="badge badge-success">Active</span> : <span className="badge badge-danger">Inactive</span>}</td>
                       <td>

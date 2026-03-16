@@ -12,6 +12,7 @@ const adminLinks = [
   { href: '/admin/events', icon: 'bi-calendar-event', label: 'Events' },
   { href: '/admin/announcements', icon: 'bi-megaphone', label: 'Announcements' },
   { href: '/admin/users', icon: 'bi-people', label: 'User Management' },
+  { href: '/admin/verifications', icon: 'bi-patch-check', label: 'Resident Verifications' },
   { href: '/admin/chatbot/logs', icon: 'bi-chat-dots', label: 'Chatbot Logs' },
 ];
 

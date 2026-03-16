@@ -11,14 +11,12 @@ export default function UserDashboard() {
   useEffect(() => {
     async function load() {
       const year = new Date().getFullYear();
-      const [annRes, evtRes, budRes] = await Promise.all([
-        supabase.from('announcements').select('*').eq('is_published', true).order('created_at', { ascending: false }).limit(5),
+      const [evtRes, budRes] = await Promise.all([
         supabase.from('events').select('*').eq('status', 'upcoming').order('event_date').limit(5),
         supabase.from('budgets').select('*').eq('year', year),
       ]);
       const budgets = budRes.data || [];
       setData({
-        latestAnnouncements: annRes.data || [],
         upcomingEvents: evtRes.data || [],
         currentYearBudget: budgets.reduce((s, b) => s + Number(b.allocated_amount), 0),
         currentYearSpent: budgets.reduce((s, b) => s + Number(b.spent_amount), 0),
@@ -51,21 +49,7 @@ export default function UserDashboard() {
           <div className="stat-card info"><i className="bi bi-calendar-check stat-icon"></i><div className="stat-value">{data.upcomingEvents.length}</div><div className="stat-label">Upcoming Events</div></div>
         </div>
 
-        <div className="grid-2 mb-3">
-          <div className="card">
-            <div className="card-header"><div className="card-title"><i className="bi bi-megaphone"></i> Latest Announcements</div></div>
-            <div className="card-body">
-              {data.latestAnnouncements.length === 0 ? (
-                <div className="empty-state"><i className="bi bi-megaphone"></i><p>No announcements yet</p></div>
-              ) : data.latestAnnouncements.map((a) => (
-                <div key={a.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>{a.title}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{a.content?.substring(0, 100)}...</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{new Date(a.created_at).toLocaleDateString()}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="mb-3">
           <div className="card">
             <div className="card-header"><div className="card-title"><i className="bi bi-calendar-event"></i> Upcoming Events</div></div>
             <div className="card-body">

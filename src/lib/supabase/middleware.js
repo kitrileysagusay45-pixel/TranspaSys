@@ -32,25 +32,61 @@ export async function updateSession(request) {
   const { pathname } = request.nextUrl;
 
   // Public routes
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/verification-pending'];
   if (publicRoutes.includes(pathname)) {
     if (user) {
-      // Logged-in user visiting login/register → redirect to dashboard
+      // Logged-in user visiting public routes
       const { data: profile } = await supabase
         .from('users')
-        .select('role, deleted_at')
+        .select('role, is_approved')
         .eq('id', user.id)
         .single();
 
-      if (profile?.deleted_at) {
-        await supabase.auth.signOut();
-        return supabaseResponse;
+      const isAdmin = (profile && ['admin', 'treasurer', 'sk'].includes(profile.role)) || 
+                      user.email === 'admin@transpasys.com';
+      const isApproved = profile?.is_approved === true || isAdmin;
+      const emailVerified = !!user.email_confirmed_at;
+
+      // Handle redirects from public pages if already logged in
+      if (pathname === '/login' || pathname === '/register') {
+        // 1. Email verification first (for everyone)
+        if (!emailVerified) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/verify-email';
+          return NextResponse.redirect(url);
+        }
+
+        // 2. Admin verification second (ONLY for residents)
+        if (!isAdmin && !isApproved) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/verification-pending';
+          return NextResponse.redirect(url);
+        }
+
+        // 3. To dashboard
+        const url = request.nextUrl.clone();
+        url.pathname = isAdmin ? '/admin/dashboard' : '/user/dashboard';
+        return NextResponse.redirect(url);
       }
 
-      const isAdmin = profile && ['admin', 'treasurer', 'sk'].includes(profile.role);
-      const url = request.nextUrl.clone();
-      url.pathname = isAdmin ? '/admin/dashboard' : '/user/dashboard';
-      return NextResponse.redirect(url);
+      // If at /verify-email but already verified
+      if (pathname === '/verify-email' && emailVerified) {
+        if (isAdmin) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/admin/dashboard';
+          return NextResponse.redirect(url);
+        }
+        const url = request.nextUrl.clone();
+        url.pathname = isApproved ? '/user/dashboard' : '/verification-pending';
+        return NextResponse.redirect(url);
+      }
+
+      // If at /verification-pending but is an admin
+      if (pathname === '/verification-pending' && isAdmin) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/admin/dashboard';
+        return NextResponse.redirect(url);
+      }
     }
     return supabaseResponse;
   }
@@ -62,26 +98,39 @@ export async function updateSession(request) {
     return NextResponse.redirect(url);
   }
 
-  // Role-based access
+  // Check Email Verification (Always required for everyone)
+  if (!user.email_confirmed_at) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/verify-email';
+    return NextResponse.redirect(url);
+  }
+
+  // Role-based access and Approval check
   if (pathname.startsWith('/admin') || pathname.startsWith('/user')) {
     const { data: profile } = await supabase
       .from('users')
-      .select('role, deleted_at')
+      .select('role, is_approved')
       .eq('id', user.id)
       .single();
 
-    if (profile?.deleted_at) {
-      await supabase.auth.signOut();
+    const isAdmin = (profile && ['admin', 'treasurer', 'sk'].includes(profile.role)) || 
+                    user.email === 'admin@transpasys.com';
+    const isApproved = profile?.is_approved === true || isAdmin;
+
+    // Residents MUST be approved to access /user dashboard
+    // Admins are NEVER blocked by is_approved
+    if (pathname.startsWith('/user') && !isAdmin && !isApproved) {
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
+      url.pathname = '/verification-pending';
       return NextResponse.redirect(url);
     }
 
-    const isAdmin = profile && ['admin', 'treasurer', 'sk'].includes(profile.role);
-
     if (pathname.startsWith('/admin') && !isAdmin) {
+      // Special case: if it's the very first login and profile isn't set up yet,
+      // we might want to allow access if it's a specific admin email, but
+      // normally we just redirect to user dashboard or pending.
       const url = request.nextUrl.clone();
-      url.pathname = '/user/dashboard';
+      url.pathname = isApproved ? '/user/dashboard' : '/verification-pending';
       return NextResponse.redirect(url);
     }
 

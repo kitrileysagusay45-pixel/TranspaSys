@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import { Chart, DoughnutController, BarController, ArcElement, BarElement, CategoryScale, LinearScale, Legend, Tooltip } from 'chart.js';
 
 Chart.register(DoughnutController, BarController, ArcElement, BarElement, CategoryScale, LinearScale, Legend, Tooltip);
@@ -102,6 +103,8 @@ export default function AdminDashboard() {
     };
   }, [data]);
 
+  const router = useRouter();
+
   const fmt = (n) => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 });
   const year = new Date().getFullYear();
 
@@ -114,6 +117,23 @@ export default function AdminDashboard() {
         <div className="topbar-right"><span className="topbar-badge">Admin</span></div>
       </div>
       <div className="page-content">
+        <div className="card mb-4" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05))' }}>
+          <div className="card-body">
+            <h3 style={{ marginBottom: 16, fontSize: '1rem' }}><i className="bi bi-lightning-charge"></i> Quick Actions</h3>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button onClick={() => router.push('/admin/announcements/create')} className="btn btn-primary">
+                <i className="bi bi-megaphone"></i> Add Announcement
+              </button>
+              <button onClick={() => router.push('/admin/events/create')} className="btn btn-secondary">
+                <i className="bi bi-calendar-plus"></i> Create Event
+              </button>
+              <button onClick={() => router.push('/admin/verifications')} className="btn btn-info" style={{ color: 'white' }}>
+                <i className="bi bi-patch-check"></i> Verify Residents
+              </button>
+            </div>
+          </div>
+        </div>
+        
         <div className="stat-grid">
           <StatCard icon="bi-cash-coin" value={fmt(data.totalBudget)} label="Total Budget Allocation" type="primary" />
           <StatCard icon="bi-calendar-event" value={data.totalEvents} label="Total Events" type="success" />
