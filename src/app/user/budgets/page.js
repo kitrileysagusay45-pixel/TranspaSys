@@ -16,6 +16,17 @@ export default function UserBudgets() {
       setLoading(false);
     }
     load();
+
+    const channel = supabase
+      .channel('user_budgets_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets' }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fmt = (n) => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 });

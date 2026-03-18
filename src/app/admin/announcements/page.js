@@ -46,7 +46,7 @@ export default function AdminAnnouncements() {
                       <td className="td-bold">{a.title}</td>
                       <td>{a.users?.name || 'Admin'}</td>
                       <td>{a.is_published ? <span className="badge badge-success">Published</span> : <span className="badge badge-secondary">Draft</span>}</td>
-                      <td>{a.published_at ? new Date(a.published_at).toLocaleDateString() : '-'}</td>
+                      <td>{a.published_at ? new Date(a.published_at).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                       <td>
                         <div className="actions-row">
                           <Link href={`/admin/announcements/${a.id}/edit`} className="btn btn-sm btn-secondary"><i className="bi bi-pencil"></i></Link>
