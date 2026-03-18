@@ -1501,42 +1501,42 @@ select.form-control {
 }
 
 /* Table overrides for light theme */
-.user-theme-layout thead th {
+[data-theme="light"] .user-theme-layout thead th {
     background: #f8fafc;
     color: var(--text-secondary);
     border-bottom: 2px solid var(--border);
 }
 
-.user-theme-layout tbody td {
+[data-theme="light"] .user-theme-layout tbody td {
     border-bottom: 1px solid var(--border);
 }
 
-.user-theme-layout tbody tr:hover {
+[data-theme="light"] .user-theme-layout tbody tr:hover {
     background: #f8fafc;
 }
 
 /* Form inputs for light theme */
-.user-theme-layout .form-control {
+[data-theme="light"] .user-theme-layout .form-control {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     color: var(--text-primary);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.user-theme-layout .form-control:focus {
+[data-theme="light"] .user-theme-layout .form-control:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 /* Stat Cards for Light theme */
-.user-theme-layout .stat-card {
+[data-theme="light"] .user-theme-layout .stat-card {
     background: #ffffff;
     box-shadow: var(--shadow);
     border-radius: 16px;
     border: 1px solid var(--border);
 }
 
-.user-theme-layout .stat-value {
+[data-theme="light"] .user-theme-layout .stat-value {
     color: var(--text-primary);
 }
 

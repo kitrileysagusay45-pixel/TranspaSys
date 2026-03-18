@@ -47,7 +47,7 @@ export default function AdminEvents() {
           <div className="card-body">
             <div className="table-wrapper">
               <table>
-                <thead><tr><th>Title</th><th>Date</th><th>Location</th><th>Status</th><th>Participants</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Title</th><th>Event Date</th><th>Posted On</th><th>Location</th><th>Status</th><th>Participants</th><th>Actions</th></tr></thead>
                 <tbody>
                   {events.length === 0 ? (
                     <tr><td colSpan="6" className="text-center text-muted">No events found</td></tr>
@@ -55,6 +55,7 @@ export default function AdminEvents() {
                     <tr key={e.id}>
                       <td className="td-bold">{e.title}</td>
                       <td>{new Date(e.event_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                      <td>{new Date(e.created_at).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                       <td>{e.location}</td>
                       <td>{statusBadge(e.status)}</td>
                       <td>

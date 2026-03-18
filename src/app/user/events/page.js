@@ -20,6 +20,17 @@ export default function UserEvents() {
       setLoading(false);
     }
     load();
+
+    const channel = supabase
+      .channel('user_events_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) return <div className="user-page-header-wrapper"><div className="user-container"><div className="spinner"></div></div></div>;
