@@ -26,9 +26,7 @@ export default function EventParticipants() {
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Event Participants</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>{event?.title}</span> Participants</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
@@ -57,7 +55,6 @@ export default function EventParticipants() {
             </div>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

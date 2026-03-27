@@ -26,9 +26,7 @@ export default function AdminAnnouncements() {
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Announcements</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Announcement</span> Management</h1>
           <Link href="/admin/announcements/create" className="btn btn-primary"><i className="bi bi-plus-lg"></i> Create</Link>
@@ -60,7 +58,6 @@ export default function AdminAnnouncements() {
             </div>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

@@ -20,9 +20,7 @@ export default function ChatbotLogs() {
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Chatbot Logs</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Chatbot</span> Logs</h1>
         </div>
@@ -48,7 +46,6 @@ export default function ChatbotLogs() {
             </div>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

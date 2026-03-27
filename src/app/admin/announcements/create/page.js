@@ -35,7 +35,8 @@ export default function CreateAnnouncement() {
     if (form.is_published) {
       await notifyResidentsAction(
         `New Announcement: ${form.title}`,
-        `A new announcement has been posted: ${form.content.substring(0, 100)}...`
+        `A new announcement has been posted: ${form.content.substring(0, 100)}...`,
+        '/user/announcements'
       );
     }
 
@@ -43,9 +44,7 @@ export default function CreateAnnouncement() {
   }
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Create Announcement</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Create</span> Announcement</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
@@ -69,7 +68,6 @@ export default function CreateAnnouncement() {
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Posting...' : <><i className="bi bi-check-lg"></i> Post Announcement</>}</button>
         </form>
-      </div>
-    </>
+    </div>
   );
 }

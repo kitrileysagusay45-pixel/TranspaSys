@@ -111,12 +111,7 @@ export default function AdminDashboard() {
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-title">Admin Dashboard</div>
-        <div className="topbar-right"><span className="topbar-badge">Admin</span></div>
-      </div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="card mb-4" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05))' }}>
           <div className="card-body">
             <h3 style={{ marginBottom: 16, fontSize: '1rem' }}><i className="bi bi-lightning-charge"></i> Quick Actions</h3>
@@ -126,9 +121,6 @@ export default function AdminDashboard() {
               </button>
               <button onClick={() => router.push('/admin/events/create')} className="btn btn-secondary">
                 <i className="bi bi-calendar-plus"></i> Create Event
-              </button>
-              <button onClick={() => router.push('/admin/verifications')} className="btn btn-info" style={{ color: 'white' }}>
-                <i className="bi bi-patch-check"></i> Verify Residents
               </button>
             </div>
           </div>
@@ -196,11 +188,10 @@ export default function AdminDashboard() {
                   )}
                 </tbody>
               </table>
-            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

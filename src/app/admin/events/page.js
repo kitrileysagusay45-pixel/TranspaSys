@@ -36,9 +36,7 @@ export default function AdminEvents() {
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Event Management</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Event</span> Management</h1>
           <Link href="/admin/events/create" className="btn btn-primary"><i className="bi bi-plus-lg"></i> Create Event</Link>
@@ -77,6 +75,5 @@ export default function AdminEvents() {
           </div>
         </div>
       </div>
-    </>
   );
 }

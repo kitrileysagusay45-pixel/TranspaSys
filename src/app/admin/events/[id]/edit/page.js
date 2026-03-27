@@ -37,9 +37,7 @@ export default function EditEvent() {
   if (!form) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Edit Event</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Edit</span> Event</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
@@ -65,7 +63,6 @@ export default function EditEvent() {
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : <><i className="bi bi-check-lg"></i> Update Event</>}</button>
         </form>
-      </div>
-    </>
+    </div>
   );
 }

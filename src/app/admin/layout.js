@@ -12,7 +12,6 @@ const adminLinks = [
   { href: '/admin/events', icon: 'bi-calendar-event', label: 'Events' },
   { href: '/admin/announcements', icon: 'bi-megaphone', label: 'Announcements' },
   { href: '/admin/users', icon: 'bi-people', label: 'User Management' },
-  { href: '/admin/verifications', icon: 'bi-patch-check', label: 'Resident Verifications' },
   { href: '/admin/chatbot/logs', icon: 'bi-chat-dots', label: 'Chatbot Logs' },
 ];
 
@@ -21,6 +20,7 @@ export default function AdminLayout({ children }) {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -37,6 +37,11 @@ export default function AdminLayout({ children }) {
     loadUser();
   }, []);
 
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push('/login');
@@ -47,9 +52,26 @@ export default function AdminLayout({ children }) {
     ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : 'A';
 
+  const currentLink = adminLinks.find(l => pathname === l.href || (pathname.startsWith(l.href + '/') && l.href !== '/'));
+
   return (
     <div className="app-layout">
-      <aside className="sidebar">
+      {/* Sidebar Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 90,
+            backdropFilter: 'blur(4px)'
+          }}
+        />
+      )}
+
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
             <i className="bi bi-shield-check"></i>
@@ -58,6 +80,13 @@ export default function AdminLayout({ children }) {
             <h2>TranspaSys</h2>
             <span>Admin Panel</span>
           </div>
+          <button 
+            className="mobile-close-btn mobile-only"
+            onClick={() => setSidebarOpen(false)}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.2rem' }}
+          >
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">Navigation</div>
@@ -90,8 +119,34 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
       <div className="main-content">
+        <header className="topbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button 
+              className="mobile-menu-btn mobile-only"
+              onClick={() => setSidebarOpen(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '1.4rem', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              <i className="bi bi-list"></i>
+            </button>
+            <div className="topbar-title">{currentLink?.label || 'Admin Dashboard'}</div>
+          </div>
+          <div className="topbar-right">
+            <span className="topbar-badge">Admin</span>
+          </div>
+        </header>
         {children}
       </div>
+
+      <style jsx>{`
+        .mobile-only {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .mobile-only {
+            display: block;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -7,8 +7,23 @@ export default function AdminUsers() {
   const supabase = createClient();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [newUsers, setNewUsers] = useState([]); // Store IDs of new users since session started
+  const [filter, setFilter] = useState('all'); // all, pending, approved
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { 
+    loadUsers(); 
+    
+    // Subscribe to new user registrations
+    const channel = supabase
+      .channel('admin-user-alerts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, (payload) => {
+        setNewUsers(prev => [payload.new.id, ...prev]);
+        loadUsers(); // Refresh list to show new user
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   async function loadUsers() {
     const { data } = await supabase
@@ -54,26 +69,50 @@ export default function AdminUsers() {
     return <span className={`badge ${map[r] || 'badge-secondary'}`}>{r}</span>;
   };
 
+  const filteredUsers = users.filter((u) => {
+    if (filter === 'pending') return !u.is_approved;
+    if (filter === 'approved') return u.is_approved;
+    return true;
+  });
+
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">User Management</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>User</span> Management</h1>
+          <div className="filter-tabs" style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setFilter('all')} className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-secondary'}`}>All</button>
+            <button onClick={() => setFilter('pending')} className={`btn btn-sm ${filter === 'pending' ? 'btn-primary' : 'btn-secondary'}`}>Pending {users.filter(u => !u.is_approved).length > 0 && <span className="badge badge-danger" style={{ marginLeft: 5 }}>{users.filter(u => !u.is_approved).length}</span>}</button>
+            <button onClick={() => setFilter('approved')} className={`btn btn-sm ${filter === 'approved' ? 'btn-primary' : 'btn-secondary'}`}>Approved</button>
+          </div>
         </div>
+
+        {newUsers.length > 0 && (
+          <div className="alert alert-info" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <i className="bi bi-person-plus-fill" style={{ fontSize: '1.2rem' }}></i>
+              <div><strong>{newUsers.length} New Registration(s)</strong> detected. Please verify their residency.</div>
+            </div>
+            <button onClick={() => { setNewUsers([]); setFilter('pending'); }} className="btn btn-sm btn-primary">View Pending</button>
+          </div>
+        )}
+
         <div className="card">
           <div className="card-body">
             <div className="table-wrapper">
               <table>
                 <thead><tr><th>Name</th><th>Email</th><th>Address</th><th>Purok</th><th>Contact</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {users.length === 0 ? (
-                    <tr><td colSpan="8" className="text-center text-muted">No users found</td></tr>
-                  ) : users.map((u) => (
-                    <tr key={u.id}>
-                      <td className="td-bold">{u.name}</td>
+                  {filteredUsers.length === 0 ? (
+                    <tr><td colSpan="8" className="text-center text-muted">No users found for this filter</td></tr>
+                  ) : filteredUsers.map((u) => (
+                    <tr key={u.id} className={newUsers.includes(u.id) ? 'row-new-highlight' : ''} style={newUsers.includes(u.id) ? { background: 'rgba(99, 102, 241, 0.05)' } : {}}>
+                      <td className="td-bold">
+                        {u.name} 
+                        {newUsers.includes(u.id) && <span className="badge badge-primary" style={{ marginLeft: 8, fontSize: '0.65rem', animation: 'pulse 2s infinite' }}>NEW</span>}
+                        {!u.is_approved && filter === 'all' && <span className="badge badge-warning" style={{ marginLeft: 8, fontSize: '0.65rem' }}>UNVERIFIED</span>}
+                      </td>
                       <td>{u.email}</td>
                       <td>{u.address || 'N/A'}</td>
                       <td>{u.purok || 'N/A'}</td>
@@ -101,6 +140,5 @@ export default function AdminUsers() {
           </div>
         </div>
       </div>
-    </>
   );
 }

@@ -30,11 +30,7 @@ export default function AdminBudgets() {
   if (loading) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-title">Budget Management</div>
-      </div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Budget</span> Management</h1>
           <Link href="/admin/budgets/create" className="btn btn-primary">
@@ -87,7 +83,6 @@ export default function AdminBudgets() {
             </div>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

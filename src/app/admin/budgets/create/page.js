@@ -43,9 +43,7 @@ export default function CreateBudget() {
   }
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Create Budget</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Create</span> Budget</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
@@ -87,7 +85,6 @@ export default function CreateBudget() {
             {loading ? 'Saving...' : <><i className="bi bi-check-lg"></i> Save Budget</>}
           </button>
         </form>
-      </div>
-    </>
+    </div>
   );
 }

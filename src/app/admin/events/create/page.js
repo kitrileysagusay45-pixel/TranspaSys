@@ -32,16 +32,15 @@ export default function CreateEvent() {
       // Notify residents
       await notifyResidentsAction(
         `New Event: ${form.title}`,
-        `A new event "${form.title}" has been scheduled for ${new Date(form.event_date).toLocaleDateString()}. Location: ${form.location}.`
+        `A new event "${form.title}" has been scheduled for ${new Date(form.event_date).toLocaleDateString()}. Location: ${form.location}.`,
+        '/user/events'
       );
     }
     router.push('/admin/events');
   }
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Create Event</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Create</span> Event</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
@@ -74,7 +73,6 @@ export default function CreateEvent() {
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : <><i className="bi bi-check-lg"></i> Create Event</>}</button>
         </form>
-      </div>
-    </>
+    </div>
   );
 }

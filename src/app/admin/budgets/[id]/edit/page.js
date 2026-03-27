@@ -36,9 +36,7 @@ export default function EditBudget() {
   if (!form) return <div className="page-content"><div className="spinner"></div></div>;
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-title">Edit Budget</div></div>
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h1 className="page-title"><span>Edit</span> Budget</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
@@ -73,7 +71,6 @@ export default function EditBudget() {
             {loading ? 'Saving...' : <><i className="bi bi-check-lg"></i> Update Budget</>}
           </button>
         </form>
-      </div>
-    </>
+    </div>
   );
 }

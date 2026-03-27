@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { customRegisterAction } from '@/app/actions/auth';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
   const [purok, setPurok] = useState('');
+  const [barangay, setBarangay] = useState('');
+  const [city, setCity] = useState('');
+  const [province, setProvince] = useState('');
   const [contact, setContact] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,7 +18,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -35,30 +36,30 @@ export default function RegisterPage() {
       return;
     }
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
-        data: {
-          name,
-          address,
-          purok,
-          contact_number: contact,
-        }
-      },
-    });
-
-    if (authError) {
-      setError(authError.message);
+    if (contact.length !== 11 || !/^\d{11}$/.test(contact)) {
+      setError('Contact number must be exactly 11 digits.');
       setLoading(false);
       return;
     }
 
-    // Note: We no longer insert into public.users here because if "Confirm Email" 
-    // is enabled, the user is not signed in yet and RLS will reject the insert.
-    // Instead, the VerificationPending page will extract the metadata and create 
-    // the profile upon the first successful login after email confirmation.
+    // Call the custom server action to handle admin generation and custom email injection
+    const response = await customRegisterAction({
+      email,
+      password,
+      name,
+      address: `${purok}, ${barangay}, ${city}, ${province}`,
+      purok,
+      barangay,
+      city,
+      province,
+      contact
+    });
+
+    if (!response.success) {
+      setError(response.error);
+      setLoading(false);
+      return;
+    }
 
     setSuccess(true);
     setLoading(false);
@@ -124,16 +125,8 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Home Address</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Street name, house number"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    required
-                  />
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)', marginBottom: 6 }}>Residential Address</label>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
@@ -141,23 +134,62 @@ export default function RegisterPage() {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Purok Name"
+                      placeholder="e.g. Purok 4"
                       value={purok}
                       onChange={(e) => setPurok(e.target.value)}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label>Contact Number</label>
+                    <label>Barangay</label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="0917XXXXXXX"
-                      value={contact}
-                      onChange={(e) => setContact(e.target.value)}
+                      placeholder="e.g. Barangay 1"
+                      value={barangay}
+                      onChange={(e) => setBarangay(e.target.value)}
                       required
                     />
                   </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>City / Municipality</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Cabadbaran City"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Province</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Agusan Del Norte"
+                      value={province}
+                      onChange={(e) => setProvince(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Contact Number</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="09XXXXXXXXX"
+                    value={contact}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                      setContact(val);
+                    }}
+                    maxLength={11}
+                    required
+                  />
                 </div>
                 <div className="form-row">
                   <div className="form-group">

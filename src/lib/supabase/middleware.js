@@ -32,7 +32,7 @@ export async function updateSession(request) {
   const { pathname } = request.nextUrl;
 
   // Public routes
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/verification-pending'];
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/verification-pending', '/verify-success'];
   if (publicRoutes.includes(pathname)) {
     if (user) {
       // Logged-in user visiting public routes
@@ -56,14 +56,7 @@ export async function updateSession(request) {
           return NextResponse.redirect(url);
         }
 
-        // 2. Admin verification second (ONLY for residents)
-        if (!isAdmin && !isApproved) {
-          const url = request.nextUrl.clone();
-          url.pathname = '/verification-pending';
-          return NextResponse.redirect(url);
-        }
-
-        // 3. To dashboard
+        // 2. To dashboard
         const url = request.nextUrl.clone();
         url.pathname = isAdmin ? '/admin/dashboard' : '/user/dashboard';
         return NextResponse.redirect(url);
@@ -77,16 +70,14 @@ export async function updateSession(request) {
           return NextResponse.redirect(url);
         }
         const url = request.nextUrl.clone();
-        url.pathname = isApproved ? '/user/dashboard' : '/verification-pending';
+        url.pathname = '/user/dashboard';
         return NextResponse.redirect(url);
+      }
+      // Let /verify-success always pass through - the page handles its own redirect
+      if (pathname === '/verify-success') {
+        return supabaseResponse;
       }
 
-      // If at /verification-pending but is an admin
-      if (pathname === '/verification-pending' && isAdmin) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/admin/dashboard';
-        return NextResponse.redirect(url);
-      }
     }
     return supabaseResponse;
   }
@@ -117,20 +108,10 @@ export async function updateSession(request) {
                     user.email === 'admin@transpasys.com';
     const isApproved = profile?.is_approved === true || isAdmin;
 
-    // Residents MUST be approved to access /user dashboard
-    // Admins are NEVER blocked by is_approved
-    if (pathname.startsWith('/user') && !isAdmin && !isApproved) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/verification-pending';
-      return NextResponse.redirect(url);
-    }
-
     if (pathname.startsWith('/admin') && !isAdmin) {
-      // Special case: if it's the very first login and profile isn't set up yet,
-      // we might want to allow access if it's a specific admin email, but
-      // normally we just redirect to user dashboard or pending.
+      // Send regular users back to user dashboard
       const url = request.nextUrl.clone();
-      url.pathname = isApproved ? '/user/dashboard' : '/verification-pending';
+      url.pathname = '/user/dashboard';
       return NextResponse.redirect(url);
     }
 
