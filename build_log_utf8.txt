@@ -1,0 +1,60 @@
+﻿
+> nextapp@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+node.exe : ΓÜá The 
+"middleware" file 
+convention is deprecated. 
+Please use "proxy" 
+instead. Learn more: https
+://nextjs.org/docs/message
+s/middleware-to-proxy
+At line:1 char:1
++ & "C:\xampp/node.exe" "C
+:\xampp/node_modules/npm/b
+in/npm-cli.js" run  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (Γ  
+  Üá The "middle...lewa   
+ re-to-proxy:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 3.6s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/27) ...
+  Generating static pages using 15 workers (6/27) 
+  Generating static pages using 15 workers (13/27) 
+Error occurred 
+prerendering page 
+"/user/dashboard". Read 
+more: https://nextjs.org/d
+ocs/messages/prerender-err
+or
+ReferenceError: 
+handleLogout is not 
+defined
+    at m (C:\xampp\htdocs\
+TranspaSys\.next\server\ch
+unks\ssr\src_app_user_layo
+ut_b47f49f5.js:1:8242) {
+  digest: '1084794361'
+}
+Export encountered an 
+error on 
+/user/dashboard/page: 
+/user/dashboard, exiting 
+the build.
+Γ¿» Next.js build worker 
+exited with code: 1 and 
+signal: null

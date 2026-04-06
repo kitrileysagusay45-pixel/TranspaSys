@@ -158,3 +158,28 @@ CREATE POLICY "Admins can view all push subscriptions" ON public.push_subscripti
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'sk', 'treasurer'))
   );
+
+-- ========== USER SYNC TRIGGER ==========
+-- This function automatically creates a profile in the public.users table 
+-- when a new user signs up via Supabase Auth.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, name, email, role, address, purok, contact_number)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'name', 'New Resident'),
+    NEW.email,
+    'user',
+    NEW.raw_user_meta_data->>'address',
+    NEW.raw_user_meta_data->>'purok',
+    NEW.raw_user_meta_data->>'contact_number'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to execute the function on every signup
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

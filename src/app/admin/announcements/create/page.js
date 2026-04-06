@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { notifyResidentsAction } from '@/app/actions/email';
+import { notifyResidentsAction } from '@/lib/actions/email';
 
 export default function CreateAnnouncement() {
   const supabase = createClient();
@@ -16,7 +16,14 @@ export default function CreateAnnouncement() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      setError('You must be logged in to create an announcement.');
+      setLoading(false);
+      return;
+    }
+
     const { error: insertError } = await supabase.from('announcements').insert({
       ...form,
       created_by: user.id,
@@ -24,7 +31,12 @@ export default function CreateAnnouncement() {
     });
 
     if (insertError) {
-      setError(insertError.message);
+      console.error('[Announcement Create Error]', insertError);
+      
+      const isColumnMissing = insertError.code === 'PGRST204' || insertError.message?.includes('column');
+      const errorHint = isColumnMissing ? 'Database schema out of sync. Please run repairs.' : insertError.message;
+      
+      setError(errorHint);
       setLoading(false);
       return;
     }

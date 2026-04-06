@@ -7,18 +7,27 @@ import nodemailer from 'nodemailer';
  * Requires BREVO_SMTP_LOGIN and BREVO_SMTP_KEY in .env.local
  */
 
-const transporter = process.env.BREVO_SMTP_LOGIN && process.env.BREVO_SMTP_KEY 
-  ? nodemailer.createTransport({
+let transporterCache = null;
+
+function getTransporter() {
+  if (transporterCache) return transporterCache;
+  
+  if (process.env.BREVO_SMTP_LOGIN && process.env.BREVO_SMTP_KEY) {
+    transporterCache = nodemailer.createTransport({
       host: 'smtp-relay.brevo.com',
       port: 587,
       auth: {
         user: process.env.BREVO_SMTP_LOGIN,
         pass: process.env.BREVO_SMTP_KEY,
       },
-    })
-  : null;
+    });
+    return transporterCache;
+  }
+  return null;
+}
 
 export async function sendNotificationEmail({ to, subject, body, userName }) {
+  const transporter = getTransporter();
   if (!transporter) {
     console.warn('[Email Warning] Brevo SMTP setup is missing. Mocking email to:', to);
     return true;
@@ -76,6 +85,7 @@ export async function notifyAllResidents({ supabase, subject, body }) {
 }
 
 export async function sendRegistrationEmail(to, confirmationUrl) {
+  const transporter = getTransporter();
   if (!transporter) {
     console.warn('[Email Warning] Brevo SMTP missing. Mocking registration email to:', to);
     return true;

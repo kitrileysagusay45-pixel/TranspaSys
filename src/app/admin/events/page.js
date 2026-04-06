@@ -12,19 +12,42 @@ export default function AdminEvents() {
   useEffect(() => { loadEvents(); }, []);
 
   async function loadEvents() {
-    const { data } = await supabase.from('events').select('*').order('event_date', { ascending: false });
-    // Get participant counts
-    const eventsWithCounts = await Promise.all((data || []).map(async (event) => {
-      const { count } = await supabase.from('event_participants').select('*', { count: 'exact', head: true }).eq('event_id', event.id);
-      return { ...event, participants_count: count || 0 };
+    const { data: eventData, error: eventError } = await supabase.from('events').select('*').order('event_date', { ascending: false });
+    
+    if (eventError || !eventData) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
+
+    // Optimized: Get participant counts for all events in one batch
+    const eventIds = eventData.map(e => e.id);
+    const { data: participantData } = await supabase
+      .from('event_participants')
+      .select('event_id')
+      .in('event_id', eventIds);
+
+    const countMap = (participantData || []).reduce((acc, p) => {
+      acc[p.event_id] = (acc[p.event_id] || 0) + 1;
+      return acc;
+    }, {});
+
+    const eventsWithCounts = eventData.map(event => ({
+      ...event,
+      participants_count: countMap[event.id] || 0
     }));
+
     setEvents(eventsWithCounts);
     setLoading(false);
   }
 
   async function handleDelete(id) {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    await supabase.from('events').delete().eq('id', id);
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (error) {
+      alert(`Delete failed: ${error.message}`);
+      return;
+    }
     loadEvents();
   }
 
@@ -48,7 +71,7 @@ export default function AdminEvents() {
                 <thead><tr><th>Title</th><th>Event Date</th><th>Posted On</th><th>Location</th><th>Status</th><th>Participants</th><th>Actions</th></tr></thead>
                 <tbody>
                   {events.length === 0 ? (
-                    <tr><td colSpan="6" className="text-center text-muted">No events found</td></tr>
+                    <tr><td colSpan="7" className="text-center text-muted">No events found</td></tr>
                   ) : events.map((e) => (
                     <tr key={e.id}>
                       <td className="td-bold">{e.title}</td>

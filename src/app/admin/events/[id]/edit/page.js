@@ -26,10 +26,23 @@ export default function EditEvent() {
     e.preventDefault();
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('events').update({
-      title: form.title, description: form.description, event_date: form.event_date,
-      location: form.location, max_participants: form.max_participants ? parseInt(form.max_participants) : null, status: form.status,
+    const { error: updateError } = await supabase.from('events').update({
+      title: form.title, 
+      description: form.description, 
+      event_date: form.event_date,
+      location: form.location, 
+      max_participants: form.max_participants ? parseInt(form.max_participants) : null, 
+      status: form.status,
     }).eq('id', params.id);
+
+    if (updateError) {
+      console.error('[Event Update Error]', updateError);
+      const isColumnMissing = updateError.code === 'PGRST204' || updateError.message?.includes('column');
+      alert(isColumnMissing ? 'Database schema out of sync. Please run repairs.' : updateError.message);
+      setLoading(false);
+      return;
+    }
+
     if (user) await supabase.from('activities').insert({ user_id: user.id, action: 'Updated event', type: 'event_updated', subject: form.title });
     router.push('/admin/events');
   }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { notifyResidentsAction } from '@/app/actions/email';
+import { notifyResidentsAction } from '@/lib/actions/email';
 
 export default function CreateEvent() {
   const supabase = createClient();
@@ -16,12 +16,24 @@ export default function CreateEvent() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      setError('You must be logged in to create an event.');
+      setLoading(false);
+      return;
+    }
+
     const insert = { ...form, max_participants: form.max_participants ? parseInt(form.max_participants) : null };
     const { error: insertError } = await supabase.from('events').insert(insert);
     
     if (insertError) {
-      setError(insertError.message);
+      console.error('[Event Create Error]', insertError);
+      
+      const isColumnMissing = insertError.code === 'PGRST204' || insertError.message?.includes('column');
+      const errorHint = isColumnMissing ? 'Database schema out of sync. Please run repairs.' : insertError.message;
+      
+      setError(errorHint);
       setLoading(false);
       return;
     }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { notifyResidentsAction } from '@/app/actions/email';
+import { notifyResidentsAction } from '@/lib/actions/email';
 
 export default function CreateBudget() {
   const supabase = createClient();
@@ -17,7 +17,14 @@ export default function CreateBudget() {
     setLoading(true);
     setError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      setError('You must be logged in to create a budget.');
+      setLoading(false);
+      return;
+    }
+
     const { error: insertError } = await supabase.from('budgets').insert({ 
       ...form, 
       allocated_amount: parseFloat(form.allocated_amount), 
@@ -25,7 +32,12 @@ export default function CreateBudget() {
     });
 
     if (insertError) {
-      setError(insertError.message);
+      console.error('[Budget Create Error]', insertError);
+      
+      const isColumnMissing = insertError.code === 'PGRST204' || insertError.message?.includes('column');
+      const errorHint = isColumnMissing ? 'Database schema out of sync. Please run repairs.' : insertError.message;
+      
+      setError(errorHint);
       setLoading(false);
       return;
     }
@@ -36,7 +48,8 @@ export default function CreateBudget() {
       // Notify residents
       await notifyResidentsAction(
         `Budget Update: ${form.category}`,
-        `A new budget allocation of ₱${parseFloat(form.allocated_amount).toLocaleString()} has been added for ${form.category} (${form.year}).`
+        `A new budget allocation of ₱${parseFloat(form.allocated_amount).toLocaleString()} has been added for ${form.category} (${form.year}).`,
+        '/user/budgets'
       );
     }
     router.push('/admin/budgets');

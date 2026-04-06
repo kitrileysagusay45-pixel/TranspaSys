@@ -1,20 +1,28 @@
 import webpush from 'web-push';
 import { createClient } from '@/lib/supabase/server';
 
-const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
+let webpushConfigured = false;
 
-if (publicVapidKey && privateVapidKey) {
-  webpush.setVapidDetails(
-    vapidSubject,
-    publicVapidKey,
-    privateVapidKey
-  );
+function getWebPush() {
+  if (webpushConfigured) return webpush;
+  
+  const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
+  const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
+
+  if (publicVapidKey && privateVapidKey) {
+    webpush.setVapidDetails(
+      vapidSubject,
+      publicVapidKey,
+      privateVapidKey
+    );
+    webpushConfigured = true;
+  }
+  return webpush;
 }
 
 export async function sendPushNotification({ title, body, icon = '/icons/icon-192x192.png', url = '/' }) {
-  const supabase = await createClient({ admin: true }); // Need service role to fetch all subs
+  const supabase = await createClient();
   
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
@@ -39,9 +47,11 @@ export async function sendPushNotification({ title, body, icon = '/icons/icon-19
 
   console.log(`[Push Start] Sending to ${subscriptions.length} devices...`);
 
+  const wp = getWebPush();
+
   const results = await Promise.allSettled(
     subscriptions.map((s) => 
-      webpush.sendNotification(s.subscription, payload)
+      wp.sendNotification(s.subscription, payload)
         .catch(err => {
           if (err.statusCode === 404 || err.statusCode === 410) {
             // Subscription expired or no longer valid, should delete from DB

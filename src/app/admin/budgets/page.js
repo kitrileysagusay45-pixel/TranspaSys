@@ -21,7 +21,11 @@ export default function AdminBudgets() {
 
   async function handleDelete(id) {
     if (!confirm('Are you sure you want to delete this budget?')) return;
-    await supabase.from('budgets').delete().eq('id', id);
+    const { error } = await supabase.from('budgets').delete().eq('id', id);
+    if (error) {
+      alert(`Delete failed: ${error.message}`);
+      return;
+    }
     loadBudgets();
   }
 

@@ -47,6 +47,13 @@ export default function PushManager() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // First check if the table exists to avoid 404/400 errors in console
+    const { error: checkError } = await supabase.from('push_subscriptions').select('id', { count: 'exact', head: true }).limit(1);
+    if (checkError && (checkError.code === '42P01' || checkError.status === 404)) {
+      console.warn('[PushManager] push_subscriptions table NOT found. Skipping save.');
+      return;
+    }
+
     await supabase.from('push_subscriptions').upsert({
       user_id: user.id,
       subscription: subscription.toJSON()
@@ -55,33 +62,7 @@ export default function PushManager() {
 
   if (!isSupported) return null;
 
-  return (
-    <div className="push-banner" style={{
-      background: 'rgba(99, 102, 241, 0.1)',
-      padding: '12px 20px',
-      borderRadius: '12px',
-      marginBottom: '20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      border: '1px solid rgba(99, 102, 241, 0.2)'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <i className="bi bi-bell-fill" style={{ color: 'var(--primary)', fontSize: '1.2rem' }}></i>
-        <div>
-          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Stay Updated!</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {isSubscribed ? 'You are receiving notifications for new events.' : 'Get notified about new events and announcements.'}
-          </div>
-        </div>
-      </div>
-      {!isSubscribed && (
-        <button onClick={subscribe} className="btn btn-sm btn-primary">
-          Enable Notifications
-        </button>
-      )}
-    </div>
-  );
+  return null;
 }
 
 function urlBase64ToUint8Array(base64String) {

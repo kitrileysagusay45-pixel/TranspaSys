@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
-import { ThemeToggle } from '@/components/ThemeProvider';
+import { ThemeToggle } from '@/components/providers/ThemeProvider';
 
 const adminLinks = [
   { href: '/admin/dashboard', icon: 'bi-speedometer2', label: 'Dashboard' },
@@ -12,7 +12,7 @@ const adminLinks = [
   { href: '/admin/events', icon: 'bi-calendar-event', label: 'Events' },
   { href: '/admin/announcements', icon: 'bi-megaphone', label: 'Announcements' },
   { href: '/admin/users', icon: 'bi-people', label: 'User Management' },
-  { href: '/admin/chatbot/logs', icon: 'bi-chat-dots', label: 'Chatbot Logs' },
+  { href: '/admin/chatbot-logs', icon: 'bi-chat-dots', label: 'Chatbot Logs' },
 ];
 
 export default function AdminLayout({ children }) {
@@ -24,18 +24,80 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     async function loadUser() {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: profile } = await supabase
+      try {
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !authUser) {
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
+
+        const { data: profile, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', authUser.id)
           .single();
-        setUser(profile);
+          
+        if (error || !profile) {
+          // SELF-HEALING: Recreate missing profile from auth metadata
+          const metadata = authUser.user_metadata || {};
+          const userName = metadata.name || authUser.email?.split('@')[0] || 'Admin';
+          
+          let { data: newProfile, error: insertError } = await supabase
+            .from('users')
+            .upsert({
+              id: authUser.id,
+              name: userName,
+              email: authUser.email,
+              role: 'admin', // Default to admin if they are in the admin layout
+              address: metadata.address || '',
+              purok: metadata.purok || '',
+              contact_number: metadata.contact_number || '',
+              email_verified: !!authUser.email_confirmed_at
+            })
+            .select()
+            .single();
+
+          // RESILIENCE: If full insert fails due to missing columns, retry with minimal columns
+          if (insertError && (insertError.code === 'PGRST204' || insertError.message?.includes('column'))) {
+            console.warn("Admin Schema mismatch detected, retrying with minimal columns...");
+            const { data: retryProfile, error: retryError } = await supabase
+              .from('users')
+              .upsert({
+                id: authUser.id,
+                name: userName,
+                email: authUser.email,
+                role: 'admin'
+              })
+              .select()
+              .single();
+            
+            newProfile = retryProfile;
+            insertError = retryError;
+          }
+          
+          if (!insertError && newProfile) {
+            setUser(newProfile);
+          } else {
+            console.error("Admin Profile creation failed:", insertError);
+            
+            const isColumnMissing = insertError?.code === 'PGRST204' || insertError?.message?.includes('column');
+            if (isColumnMissing) {
+              await supabase.auth.signOut();
+              router.push('/login?error=Database columns missing. Please run repairs.');
+              return;
+            }
+          }
+        } else {
+          setUser(profile);
+        }
+      } catch (err) {
+        console.error("Admin Layout auth error:", err);
       }
     }
     loadUser();
-  }, []);
+  }, [router, supabase]);
 
   // Close sidebar when route changes on mobile
   useEffect(() => {

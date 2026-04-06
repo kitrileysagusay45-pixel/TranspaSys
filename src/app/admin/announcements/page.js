@@ -19,7 +19,11 @@ export default function AdminAnnouncements() {
 
   async function handleDelete(id) {
     if (!confirm('Delete this announcement?')) return;
-    await supabase.from('announcements').delete().eq('id', id);
+    const { error } = await supabase.from('announcements').delete().eq('id', id);
+    if (error) {
+      alert(`Delete failed: ${error.message}`);
+      return;
+    }
     loadAnnouncements();
   }
 

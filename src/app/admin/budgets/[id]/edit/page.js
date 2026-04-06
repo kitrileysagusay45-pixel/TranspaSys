@@ -23,10 +23,22 @@ export default function EditBudget() {
     e.preventDefault();
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('budgets').update({
-      category: form.category, allocated_amount: parseFloat(form.allocated_amount),
-      spent_amount: parseFloat(form.spent_amount), year: form.year, description: form.description,
+    const { error: updateError } = await supabase.from('budgets').update({
+      category: form.category, 
+      allocated_amount: parseFloat(form.allocated_amount),
+      spent_amount: parseFloat(form.spent_amount), 
+      year: form.year, 
+      description: form.description,
     }).eq('id', params.id);
+
+    if (updateError) {
+      console.error('[Budget Update Error]', updateError);
+      const isColumnMissing = updateError.code === 'PGRST204' || updateError.message?.includes('column');
+      alert(isColumnMissing ? 'Database schema out of sync. Please run repairs.' : updateError.message);
+      setLoading(false);
+      return;
+    }
+
     if (user) {
       await supabase.from('activities').insert({ user_id: user.id, action: 'Updated budget', type: 'budget_updated', subject: form.category });
     }

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -26,6 +27,25 @@ export default function LoginPage() {
       setError(authError.message);
       setLoading(false);
       return;
+    }
+
+    // Check email verification status
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('email_verified, role')
+        .eq('id', user.id)
+        .single();
+
+      const isAdmin = (profile && ['admin', 'treasurer', 'sk'].includes(profile.role)) || user.email === 'admin@transpasys.com';
+
+      if (!isAdmin && (!user.email_confirmed_at || (profile && !profile.email_verified))) {
+        await supabase.auth.signOut();
+        setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+        setLoading(false);
+        return;
+      }
     }
 
     router.refresh();
@@ -63,14 +83,24 @@ export default function LoginPage() {
             </div>
             <div className="form-group">
               <label>Password</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-control"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button 
+                  type="button" 
+                  className="password-toggle" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
+                </button>
+              </div>
             </div>
             <div style={{ textAlign: 'right', marginBottom: 16 }}>
               <a href="/forgot-password" style={{ color: 'var(--primary-light)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 500 }}>

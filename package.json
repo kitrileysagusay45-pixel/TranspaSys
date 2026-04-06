@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "predev": "if exist .next\\dev\\lock (del .next\\dev\\lock)",
     "build": "next build",
     "start": "next start",
     "lint": "eslint src/"
@@ -20,7 +21,11 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^16.1.6"
+    "eslint-config-next": "^16.1.6",
+    "typescript": "^6.0.2"
   }
 }

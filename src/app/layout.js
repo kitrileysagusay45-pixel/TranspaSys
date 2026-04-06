@@ -1,5 +1,5 @@
 import './globals.css';
-import { ThemeProvider } from '@/components/ThemeProvider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 export const metadata = {
   title: 'TranspaSys - Barangay Transparency System',

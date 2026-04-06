@@ -9,6 +9,7 @@ export default function EditAnnouncement() {
   const router = useRouter();
   const params = useParams();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState(null);
 
   useEffect(() => {
@@ -22,11 +23,29 @@ export default function EditAnnouncement() {
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('announcements').update({
-      title: form.title, content: form.content, is_published: form.is_published,
-      published_at: form.is_published ? new Date().toISOString() : null,
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      setError('You must be logged in to update an announcement.');
+      setLoading(false);
+      return;
+    }
+
+    const { error: updateError } = await supabase.from('announcements').update({
+      title: form.title, 
+      content: form.content, 
+      is_published: form.is_published,
+      published_at: form.is_published ? (form.published_at || new Date().toISOString()) : null,
     }).eq('id', params.id);
+
+    if (updateError) {
+      console.error('[Announcement Update Error]', updateError);
+      const isColumnMissing = updateError.code === 'PGRST204' || updateError.message?.includes('column');
+      alert(isColumnMissing ? 'Database schema out of sync. Please run repairs.' : updateError.message);
+      setLoading(false);
+      return;
+    }
+
     if (user) await supabase.from('activities').insert({ user_id: user.id, action: 'Updated announcement', type: 'announcement_updated', subject: form.title });
     router.push('/admin/announcements');
   }
@@ -39,6 +58,12 @@ export default function EditAnnouncement() {
           <h1 className="page-title"><span>Edit</span> Announcement</h1>
           <button onClick={() => router.back()} className="btn btn-secondary"><i className="bi bi-arrow-left"></i> Back</button>
         </div>
+        {error && (
+          <div className="alert alert-danger mb-4">
+            <i className="bi bi-exclamation-triangle"></i>
+            <div className="alert-content"><strong>Error:</strong> {error}</div>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-section">
             <div className="form-section-title"><i className="bi bi-megaphone"></i> Announcement Details</div>

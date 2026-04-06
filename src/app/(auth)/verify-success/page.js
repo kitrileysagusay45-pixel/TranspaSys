@@ -23,6 +23,7 @@ function VerifySuccessContent() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && user.email_confirmed_at) {
           setStatus('success');
+          router.push('/user/dashboard');
         } else {
           setErrorMsg('Missing verification token. Please use the link from your email.');
           setStatus('error');
@@ -31,7 +32,7 @@ function VerifySuccessContent() {
       }
 
       // Verify the token directly — this confirms the email AND establishes a session
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
         type: type,
       });
@@ -40,7 +41,26 @@ function VerifySuccessContent() {
         setErrorMsg(error.message);
         setStatus('error');
       } else {
-        setStatus('success');
+        const verifiedUser = data?.user;
+        
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', verifiedUser?.id);
+          
+        if (updateError) {
+          console.error("Verification sync error:", updateError);
+          if (updateError.code === 'PGRST204' || updateError.message?.includes('column')) {
+            setErrorMsg('Database sync required. Please contact admin to run the database repair script.');
+          } else {
+            setErrorMsg('Failed to update your profile status, but your email is verified. Please try logging in.');
+          }
+          setStatus('error');
+        } else {
+          setStatus('success');
+          // Automatically route new users straight into the dashboard
+          router.push('/user/dashboard');
+        }
       }
     }
 

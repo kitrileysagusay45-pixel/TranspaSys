@@ -32,7 +32,7 @@ export async function updateSession(request) {
   const { pathname } = request.nextUrl;
 
   // Public routes
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/verification-pending', '/verify-success'];
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/verification-pending', '/verify-success', '/api/auth/test-setup'];
   if (publicRoutes.includes(pathname)) {
     if (user) {
       // Logged-in user visiting public routes
@@ -49,8 +49,8 @@ export async function updateSession(request) {
 
       // Handle redirects from public pages if already logged in
       if (pathname === '/login' || pathname === '/register') {
-        // 1. Email verification first (for everyone)
-        if (!emailVerified) {
+        // 1. Email verification first (for regular users)
+        if (!emailVerified && !isAdmin) {
           const url = request.nextUrl.clone();
           url.pathname = '/verify-email';
           return NextResponse.redirect(url);
@@ -89,25 +89,25 @@ export async function updateSession(request) {
     return NextResponse.redirect(url);
   }
 
-  // Check Email Verification (Always required for everyone)
-  if (!user.email_confirmed_at) {
+  // Role-based access and Approval check
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role, is_approved')
+    .eq('id', user.id)
+    .single();
+
+  const isAdmin = (profile && ['admin', 'treasurer', 'sk'].includes(profile.role)) || 
+                  user.email === 'admin@transpasys.com';
+  const isApproved = profile?.is_approved === true || isAdmin;
+
+  // Check Email Verification (Always required for regular users, optional for admins)
+  if (!user.email_confirmed_at && !isAdmin) {
     const url = request.nextUrl.clone();
     url.pathname = '/verify-email';
     return NextResponse.redirect(url);
   }
 
-  // Role-based access and Approval check
   if (pathname.startsWith('/admin') || pathname.startsWith('/user')) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role, is_approved')
-      .eq('id', user.id)
-      .single();
-
-    const isAdmin = (profile && ['admin', 'treasurer', 'sk'].includes(profile.role)) || 
-                    user.email === 'admin@transpasys.com';
-    const isApproved = profile?.is_approved === true || isAdmin;
-
     if (pathname.startsWith('/admin') && !isAdmin) {
       // Send regular users back to user dashboard
       const url = request.nextUrl.clone();

@@ -11,11 +11,38 @@ export default function UserEvents() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('events').select('*').eq('status', 'upcoming').order('event_date');
-      const eventsWithCounts = await Promise.all((data || []).map(async (event) => {
-        const { count } = await supabase.from('event_participants').select('*', { count: 'exact', head: true }).eq('event_id', event.id);
-        return { ...event, participants_count: count || 0 };
+      // 1. Fetch upcoming events
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('status', 'upcoming')
+        .order('event_date');
+
+      if (eventError || !eventData) {
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch ALL participant counts for those events in ONE batch
+      // Since it's a many-to-one relationship, we can use an 'in' filter for performance
+      const eventIds = eventData.map(e => e.id);
+      const { data: participantData } = await supabase
+        .from('event_participants')
+        .select('event_id')
+        .in('event_id', eventIds);
+
+      // 3. Map counts back to events
+      const countMap = (participantData || []).reduce((acc, p) => {
+        acc[p.event_id] = (acc[p.event_id] || 0) + 1;
+        return acc;
+      }, {});
+
+      const eventsWithCounts = eventData.map(event => ({
+        ...event,
+        participants_count: countMap[event.id] || 0
       }));
+
       setEvents(eventsWithCounts);
       setLoading(false);
     }
