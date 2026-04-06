@@ -178,6 +178,24 @@ export default function UserLayout({ children }) {
         />
       )}
 
+      <div className={`user-nav-links ${menuOpen ? 'open' : ''}`}>
+        <div className="mobile-only menu-header">
+          <h3>Menu</h3>
+          <button onClick={() => setMenuOpen(false)} aria-label="Close Menu"><i className="bi bi-x-lg"></i></button>
+        </div>
+        {userLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={'user-nav-link' + (pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/') ? ' active' : '')}
+            onClick={() => setMenuOpen(false)}
+          >
+            <i className={`bi ${link.icon}`}></i>
+            <span>{link.label}</span>
+          </Link>
+        ))}
+      </div>
+
       <nav className="user-navbar">
         <div className="user-nav-container">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -196,22 +214,7 @@ export default function UserLayout({ children }) {
               </div>
             </Link>
           </div>
-          <div className={`user-nav-links ${menuOpen ? 'open' : ''}`}>
-            <div className="mobile-only menu-header">
-              <h3>Menu</h3>
-              <button onClick={() => setMenuOpen(false)}><i className="bi bi-x-lg"></i></button>
-            </div>
-            {userLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={'user-nav-link' + (pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/') ? ' active' : '')}
-              >
-                <i className={`bi ${link.icon}`}></i>
-                <span>{link.label}</span>
-              </Link>
-            ))}
-          </div>
+          
           <div className="user-nav-right">
             <ThemeToggle />
             <div className="user-profile-btn">
@@ -312,7 +315,7 @@ export default function UserLayout({ children }) {
           background: rgba(0, 0, 0, 0.4);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
-          z-index: 2000;
+          z-index: 2500;
           animation: fadeIn 0.3s ease;
         }
 
@@ -357,9 +360,11 @@ export default function UserLayout({ children }) {
           border-right: 1px solid var(--border);
           transform: translateX(-100%);
           transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          z-index: 3000;
+          z-index: 5000;
           display: flex !important;
           box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
           /* Safe area for notched devices */
           padding-top: env(safe-area-inset-top, 0px);
           padding-bottom: env(safe-area-inset-bottom, 0px);
