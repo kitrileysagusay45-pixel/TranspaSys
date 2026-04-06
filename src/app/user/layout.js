@@ -25,6 +25,44 @@ export default function UserLayout({ children }) {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState(null); // { success, message }
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
+  const handleResend = async () => {
+    if (cooldown > 0) return;
+    setResending(true);
+    setResendStatus(null);
+    
+    try {
+      const { resendVerificationAction } = await import('@/lib/actions/auth');
+      const result = await resendVerificationAction();
+      if (result.success) {
+        setResendStatus({ success: true, message: "Verification link sent! Please check your inbox." });
+        setCooldown(60); // 1-minute cooldown
+      } else {
+        setResendStatus({ success: false, message: result.error || "Failed to resend." });
+      }
+    } catch (err) {
+      setResendStatus({ success: false, message: "An unexpected error occurred." });
+    } finally {
+      setResending(false);
+    }
+  };
+
   useEffect(() => {
     async function loadUser() {
       try {
@@ -127,43 +165,6 @@ export default function UserLayout({ children }) {
     }
   }, [menuOpen]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }
-
-  const [resending, setResending] = useState(false);
-  const [resendStatus, setResendStatus] = useState(null); // { success, message }
-  const [cooldown, setCooldown] = useState(0);
-
-  useEffect(() => {
-    if (cooldown > 0) {
-      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [cooldown]);
-
-  async function handleResend() {
-    if (cooldown > 0) return;
-    setResending(true);
-    setResendStatus(null);
-    
-    try {
-      const { resendVerificationAction } = await import('@/lib/actions/auth');
-      const result = await resendVerificationAction();
-      if (result.success) {
-        setResendStatus({ success: true, message: "Verification link sent! Please check your inbox." });
-        setCooldown(60); // 1-minute cooldown
-      } else {
-        setResendStatus({ success: false, message: result.error || "Failed to resend." });
-      }
-    } catch (err) {
-      setResendStatus({ success: false, message: "An unexpected error occurred." });
-    } finally {
-      setResending(false);
-    }
-  }
 
   const initials = user?.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 

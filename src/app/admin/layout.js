@@ -22,6 +22,12 @@ export default function AdminLayout({ children }) {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
   useEffect(() => {
     async function loadUser() {
       try {
@@ -104,11 +110,6 @@ export default function AdminLayout({ children }) {
     setSidebarOpen(false);
   }, [pathname]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -203,9 +204,50 @@ export default function AdminLayout({ children }) {
         .mobile-only {
           display: none;
         }
+
         @media (max-width: 768px) {
           .mobile-only {
             display: block;
+          }
+
+          .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 280px;
+            /* Handle iOS Dynamic Viewport */
+            height: 100vh;
+            height: 100dvh;
+            z-index: 3000;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+            /* Safe area for notched devices */
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+          }
+
+          .sidebar.open {
+            transform: translateX(0);
+          }
+
+          .main-content {
+            margin-left: 0;
+            width: 100%;
+          }
+
+          .topbar {
+            padding: 0 16px;
+            z-index: 1000;
+          }
+
+          .mobile-menu-btn {
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
         }
       `}</style>
