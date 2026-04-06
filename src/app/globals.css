@@ -24,6 +24,13 @@
     --radius-sm: 8px;
     --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.2);
+
+    /* Chat Widget Variables (Dark) */
+    --chat-bg: #1a1a2e;
+    --chat-messages-bg: #0f0f1a;
+    --chat-bubble-bot: #2d2d44;
+    --chat-bubble-bot-text: #f1f5f9;
+    --chat-input-bg: #1e1e3f;
 }
 
 * {
@@ -1684,9 +1691,10 @@ select.form-control {
 .chat-widget-window {
     width: 380px;
     height: 550px;
-    background: #fff;
+    background: var(--chat-bg);
+    border: 1px solid var(--border);
     border-radius: 24px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow);
     margin-bottom: 20px;
     display: flex;
     flex-direction: column;
@@ -1740,17 +1748,17 @@ select.form-control {
 
 .chat-widget-topics {
     padding: 12px;
-    background: #f8fafc;
+    background: rgba(255, 255, 255, 0.02);
     display: flex;
     gap: 6px;
     overflow-x: auto;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
 }
 
 .topic-btn {
     padding: 6px 12px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 16px;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -1770,7 +1778,7 @@ select.form-control {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    background: #fff;
+    background: var(--chat-messages-bg);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1786,9 +1794,10 @@ select.form-control {
 
 .chat-widget-messages .chat-bubble.bot {
     align-self: flex-start;
-    background: #f1f5f9;
-    color: var(--text-primary);
+    background: var(--chat-bubble-bot);
+    color: var(--chat-bubble-bot-text);
     border-bottom-left-radius: 2px;
+    border: 1px solid var(--border);
 }
 
 .chat-widget-messages .chat-bubble.user {
@@ -1800,8 +1809,8 @@ select.form-control {
 
 .chat-widget-input {
     padding: 16px;
-    background: #fff;
-    border-top: 1px solid #e2e8f0;
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--border);
     display: flex;
     gap: 10px;
 }
@@ -1809,8 +1818,10 @@ select.form-control {
 .chat-widget-input input {
     flex: 1;
     padding: 12px 18px;
-    border: 1px solid #e2e8f0;
+    background: var(--chat-input-bg);
+    border: 1px solid var(--border);
     border-radius: 24px;
+    color: var(--text-primary);
     font-size: 0.9rem;
     outline: none;
     transition: border-color 0.2s;
@@ -1984,6 +1995,13 @@ select.form-control {
     --text-muted: #94a3b8;
     --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
     --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.08);
+
+    /* Chat Widget Variables (Light) */
+    --chat-bg: #ffffff;
+    --chat-messages-bg: #f8fafc;
+    --chat-bubble-bot: #ffffff;
+    --chat-bubble-bot-text: #1a1a2e;
+    --chat-input-bg: #ffffff;
 }
 
 [data-theme="light"] body {
@@ -2230,39 +2248,7 @@ select.form-control {
     background: rgba(0, 0, 0, 0.15);
 }
 
-/* Chat widget light */
-[data-theme="light"] .chat-widget-window {
-    background: rgba(255, 255, 255, 0.98);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-}
-
-[data-theme="light"] .chat-widget-header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-}
-
-[data-theme="light"] .chat-widget-messages {
-    background: #f8f9fa;
-}
-
-[data-theme="light"] .chat-bubble.bot {
-    background: #fff;
-    color: var(--text-primary);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .chat-widget-input input {
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: var(--text-primary);
-}
-
-[data-theme="light"] .topic-btn {
-    background: rgba(0, 0, 0, 0.04);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: var(--text-secondary);
-}
-
+/* Topic button active state */
 [data-theme="light"] .topic-btn.active {
     background: rgba(99, 102, 241, 0.1);
     border-color: var(--primary);
