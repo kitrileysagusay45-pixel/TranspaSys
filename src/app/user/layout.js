@@ -118,6 +118,15 @@ export default function UserLayout({ children }) {
     setMenuOpen(false);
   }, [pathname]);
 
+  // Prevent scroll when menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [menuOpen]);
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push('/login');
@@ -160,15 +169,23 @@ export default function UserLayout({ children }) {
 
   return (
     <div className="user-theme-layout">
+      {/* Sidebar Overlay for mobile */}
+      {menuOpen && (
+        <div 
+          className="user-sidebar-overlay" 
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
       <nav className="user-navbar">
         <div className="user-nav-container">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button 
-              className="mobile-menu-btn mobile-only" 
+              className="menu-toggle-btn" 
               onClick={() => setMenuOpen(!menuOpen)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '1.4rem', padding: 0 }}
+              aria-label="Toggle Menu"
             >
-              <i className={`bi ${menuOpen ? 'bi-x' : 'bi-list'}`}></i>
+              <i className={`bi ${menuOpen ? 'bi-x-lg' : 'bi-list'}`}></i>
             </button>
             <Link href="/user/dashboard" className="user-nav-brand">
               <div className="user-nav-icon"><i className="bi bi-shield-check"></i></div>
@@ -179,6 +196,10 @@ export default function UserLayout({ children }) {
             </Link>
           </div>
           <div className={`user-nav-links ${menuOpen ? 'open' : ''}`}>
+            <div className="mobile-only menu-header">
+              <h3>Menu</h3>
+              <button onClick={() => setMenuOpen(false)}><i className="bi bi-x-lg"></i></button>
+            </div>
             {userLinks.map((link) => (
               <Link
                 key={link.href}
@@ -186,7 +207,7 @@ export default function UserLayout({ children }) {
                 className={'user-nav-link' + (pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/') ? ' active' : '')}
               >
                 <i className={`bi ${link.icon}`}></i>
-                {link.label}
+                <span>{link.label}</span>
               </Link>
             ))}
           </div>
@@ -278,34 +299,148 @@ export default function UserLayout({ children }) {
       <ChatWidget />
 
       <style jsx>{`
-        .mobile-only {
-          display: none;
+        /* --- Base & Desktop Styles --- */
+        .desktop-nav-links {
+          display: flex;
+          gap: 8px;
         }
-        @media (max-width: 768px) {
-          .mobile-only {
-            display: block;
-          }
+
+        .user-sidebar-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 2000;
+          animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .menu-toggle-btn {
+          background: none;
+          border: none;
+          color: var(--text-primary);
+          font-size: 1.6rem;
+          padding: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          transition: all 0.2s;
+          cursor: pointer;
+          min-width: 44px;
+          min-height: 44px;
+        }
+
+        .menu-toggle-btn:hover, .menu-toggle-btn:active {
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .user-nav-links {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 300px;
+          /* Handle iOS Dynamic Viewport */
+          height: 100vh;
+          height: 100dvh;
+          background: var(--bg-sidebar);
+          flex-direction: column;
+          padding: 0;
+          border-right: 1px solid var(--border);
+          transform: translateX(-100%);
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 3000;
+          display: flex !important;
+          box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+          /* Safe area for notched devices */
+          padding-top: env(safe-area-inset-top, 0px);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .user-nav-links.open {
+          transform: translateX(0);
+        }
+
+        .menu-header {
+          padding: 30px 24px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+        }
+
+        .menu-header h3 {
+          font-size: 1.3rem;
+          font-weight: 800;
+          color: var(--text-primary);
+          letter-spacing: -0.5px;
+        }
+
+        .menu-header button {
+          background: rgba(255, 255, 255, 0.05);
+          border: none;
+          color: var(--text-secondary);
+          font-size: 1.2rem;
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        .user-nav-link {
+          width: calc(100% - 32px);
+          margin: 6px 16px;
+          padding: 16px 20px;
+          font-size: 1.05rem;
+          border-radius: 14px;
+          gap: 16px;
+          display: flex;
+          align-items: center;
+          text-decoration: none;
+          color: var(--text-secondary);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .user-nav-link i {
+          font-size: 1.3rem;
+          width: 24px;
+          text-align: center;
+        }
+
+        .user-nav-link:hover {
+          background: rgba(255, 255, 255, 0.05);
+          color: var(--text-primary);
+          padding-left: 24px;
+        }
+
+        .user-nav-link.active {
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.1));
+          color: var(--primary-light);
+          font-weight: 600;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Device Specific Fixes --- */
+        @media (max-width: 480px) {
           .user-nav-links {
-            position: fixed;
-            top: var(--topbar-height);
-            left: 0;
-            right: 0;
-            background: var(--bg-sidebar);
-            flex-direction: column;
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
-            z-index: 40;
-            display: flex !important;
+            width: 85vw;
           }
-          .user-nav-links.open {
-            transform: translateY(0);
-          }
-          .user-nav-link {
-            width: 100%;
-            padding: 12px;
+          .user-nav-text h2 {
             font-size: 1rem;
+          }
+          .user-name {
+            display: none;
           }
         }
       `}</style>
