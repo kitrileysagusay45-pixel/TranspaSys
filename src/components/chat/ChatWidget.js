@@ -40,48 +40,86 @@ export default function ChatWidget() {
   return (
     <div className={`chat-widget-container ${isOpen ? 'open' : ''}`}>
       {isOpen && (
-        <div className="chat-widget-window" style={{ opacity: 1, visibility: 'visible', transform: 'translateY(0) scale(1)' }}>
+        <div className="chat-widget-window">
           <div className="chat-widget-header">
-            <div className="chat-widget-title"><i className="bi bi-robot"></i> TranspaSys AI</div>
-            <button className="chat-widget-close" onClick={() => setIsOpen(false)}>×</button>
+            <div className="chat-widget-title">
+              <i className="bi bi-robot"></i> 
+              <span>TranspaSys AI</span>
+              <span className="status-dot online"></span>
+            </div>
+            <button className="chat-widget-close" onClick={() => setIsOpen(false)} aria-label="Close Chat">
+              <i className="bi bi-dash-lg"></i>
+            </button>
           </div>
           <div className="chat-widget-topics">
             {categories.map((c) => (
-              <button key={c.key} className={`topic-btn ${category === c.key ? 'active' : ''}`} onClick={() => setCategory(c.key)}>{c.label}</button>
+              <button 
+                key={c.key} 
+                className={`topic-btn ${category === c.key ? 'active' : ''}`} 
+                onClick={() => setCategory(c.key)}
+              >
+                {c.label}
+              </button>
             ))}
           </div>
           <div className="chat-widget-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-message-row ${m.role}`}>
-                {m.role === 'bot' && <div className="chat-avatar bot"><i className="bi bi-robot"></i></div>}
-                <div className={`chat-bubble ${m.role}`}>{m.content}</div>
-                {m.role === 'user' && <div className="chat-avatar user"><i className="bi bi-person"></i></div>}
+                {m.role === 'bot' && (
+                  <div className="chat-avatar bot">
+                    <i className="bi bi-robot"></i>
+                  </div>
+                )}
+                <div className={`chat-bubble ${m.role}`}>
+                  {m.content}
+                </div>
+                {m.role === 'user' && (
+                  <div className="chat-avatar user">
+                    <i className="bi bi-person-fill"></i>
+                  </div>
+                )}
               </div>
             ))}
             {loading && (
               <div className="chat-message-row bot">
-                <div className="chat-avatar bot"><i className="bi bi-robot"></i></div>
+                <div className="chat-avatar bot">
+                  <i className="bi bi-robot"></i>
+                </div>
                 <div className="chat-bubble bot typing">
-                  <div className="typing-indicator"><div className="typing-dot"></div><div className="typing-dot"></div><div className="typing-dot"></div></div>
-                  <span className="typing-text">Thinking...</span>
+                  <div className="typing-indicator">
+                    <span></span><span></span><span></span>
+                  </div>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
           <form className="chat-widget-input" onSubmit={handleSend}>
-            <input placeholder="Ask a question..." value={input} onChange={(e) => setInput(e.target.value)} disabled={loading} />
-            <button type="submit" disabled={loading || !input.trim()}><i className="bi bi-send"></i></button>
+            <input 
+              placeholder="Type your question..." 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              disabled={loading}
+              autoFocus
+            />
+            <button type="submit" disabled={loading || !input.trim()} aria-label="Send Message">
+              <i className="bi bi-send-fill"></i>
+            </button>
           </form>
         </div>
       )}
-      <button className="chat-widget-toggle" onClick={() => setIsOpen(!isOpen)}>
+      <button 
+        className="chat-widget-toggle" 
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
+      >
         <div className="robot-head">
           <div className="robot-eyes"><span></span><span></span></div>
           <div className="robot-mouth"></div>
         </div>
-        <span className="chat-widget-tooltip">Chat with AI</span>
+        {!isOpen && <span className="chat-widget-tooltip">Need help? Ask AI</span>}
       </button>
     </div>
   );
 }
+

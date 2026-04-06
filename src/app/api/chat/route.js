@@ -2,130 +2,135 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  const { message, category = 'general' } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { message, category = 'general' } = body;
 
-  if (!message || message.length > 500) {
-    return NextResponse.json({ error: 'Invalid message' }, { status: 400 });
-  }
+    if (!message || typeof message !== 'string' || message.trim().length === 0 || message.length > 500) {
+      return NextResponse.json({ error: 'Invalid message. Maximum 500 characters allowed.' }, { status: 400 });
+    }
 
-  // Build system context from database
-  const context = await getSystemContext(supabase);
+    const context = await getSystemContext(supabase);
 
-  let response;
-  const apiKey = process.env.GROQ_API_KEY;
+    let response;
+    const apiKey = process.env.GROQ_API_KEY;
 
-  if (apiKey) {
-    try {
-      // Get recent history for context
-      const { data: historyData } = await supabase
-        .from('chatbot_conversations')
-        .select('user_message, bot_response')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+    if (apiKey) {
+      try {
+        const { data: historyData, error: historyError } = await supabase
+          .from('chatbot_conversations')
+          .select('user_message, bot_response')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(6); // Keep last 6 for context
 
-      const history = (historyData || []).reverse();
+        if (historyError) console.error('History fetch error:', historyError);
+        const history = (historyData || []).reverse();
 
-      const systemMessage = `You are a helpful AI Assistant for a Barangay Management System called TranspaSys. 
-      You are currently helping a resident in the '${category}' category.
-      
-      SYSTEM CONTEXT:
-      ${context}
-      
-      **STRICT RULES**:
-      1. ONLY answer based on the provided SYSTEM CONTEXT. If the information is not in the context, politely say you don't have that information.
-      2. ONLY answer the user's specific question. Do not provide unrelated info.
-      3. NO UNSOLICITED LISTS. If asked about budget, do NOT show events. If asked about events, do NOT show budget.
-      4. **ACCURACY IS PARAMOUNT**: Double-check amounts and dates against the SYSTEM CONTEXT before responding.
-      5. **CONTEXT AWARENESS**: Refer to the previous history of the conversation to provide relevant follow-up answers.
-      6. **PRIVACY & SECURITY**: NEVER provide private user data, passwords, or personal details.
-      7. **TRUST DATA FIELDS**: Always prioritize the 'Date' or 'Year' fields in the context over any years mentioned in Title strings.
-      8. DO NOT dump the entire list unless the user asks for 'all' or 'the full' list/budget/events.
-      9. BE CONCISE and professional.
-      
-      **EVENT FORMATTING**: - **[Event Title]**: [Date], [Location], Status: [Status], Description: [Description]
-      **BUDGET FORMATTING**: - Year: [Year], Category: [Category], Allocated: ₱[Amount], Spent: ₱[Amount], Remaining: ₱[Amount]`;
+        const systemMessage = `You are a helpful AI Assistant for TranspaSys (Barangay Transparency System). 
+        Category: ${category}
+        
+        CONTEXT:
+        ${context}
+        
+        RULES:
+        1. Base answers ONLY on the CONTEXT.
+        2. Be concise and professional.
+        3. Use ₱ for currency.
+        4. If info is missing, say "I don't have that information right now."
+        5. Prioritize the 'Date/Year' fields.`;
 
-      const messages = [{ role: 'system', content: systemMessage }];
-      history.forEach((item) => {
-        messages.push({ role: 'user', content: item.user_message });
-        messages.push({ role: 'assistant', content: item.bot_response });
-      });
-      messages.push({ role: 'user', content: message });
+        const messages = [{ role: 'system', content: systemMessage }];
+        history.forEach((item) => {
+          messages.push({ role: 'user', content: item.user_message });
+          messages.push({ role: 'assistant', content: item.bot_response });
+        });
+        messages.push({ role: 'user', content: message.trim() });
 
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages,
-          temperature: 0.7,
-          max_tokens: 500,
-        }),
-      });
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant',
+            messages,
+            temperature: 0.6,
+            max_tokens: 400,
+          }),
+        });
 
-      const result = await groqRes.json();
-      response = result.choices?.[0]?.message?.content || getFallbackResponse(context);
-    } catch (error) {
-      console.error('Groq API Error:', error);
+        if (!groqRes.ok) throw new Error(`Groq API returned ${groqRes.status}`);
+        
+        const result = await groqRes.json();
+        response = result.choices?.[0]?.message?.content || getFallbackResponse(context);
+      } catch (error) {
+        console.error('Chat API Error:', error);
+        response = getFallbackResponse(context);
+      }
+    } else {
       response = getFallbackResponse(context);
     }
-  } else {
-    response = getFallbackResponse(context);
+
+    // Save conversation in background (non-blocking)
+    supabase.from('chatbot_conversations').insert({
+      user_id: user.id,
+      user_message: message.trim(),
+      bot_response: response,
+      category,
+    }).then(({ error }) => { if (error) console.error('Failed to save log:', error); });
+
+    return NextResponse.json({ response });
+  } catch (globalError) {
+    console.error('Global Chat Exception:', globalError);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  // Save conversation
-  await supabase.from('chatbot_conversations').insert({
-    user_id: user.id,
-    user_message: message,
-    bot_response: response,
-    category,
-  });
-
-  return NextResponse.json({ response });
 }
 
 function getFallbackResponse(context) {
-  return `I'm having trouble connecting to my brain right now, but here is what I see in the system:\n\n${context}\n\nHow else can I help you?`;
+  return `I'm currently operating in offline mode. Based on our latest records:\n\n${context}\n\nIs there anything specific you'd like to know about these?`;
 }
 
 async function getSystemContext(supabase) {
-  const currentYear = new Date().getFullYear();
-  const { data: budgets } = await supabase.from('budgets').select('*').order('year', { ascending: false });
-  const { data: events } = await supabase.from('events').select('*').order('event_date', { ascending: false });
+  try {
+    const currentYear = new Date().getFullYear();
+    const [{ data: budgets }, { data: events }] = await Promise.all([
+      supabase.from('budgets').select('year,category,allocated_amount,spent_amount').order('year', { ascending: false }).limit(10),
+      supabase.from('events').select('title,event_date,location,status,description').order('event_date', { ascending: false }).limit(10)
+    ]);
 
-  let context = `CURRENT YEAR: ${currentYear}\n\n`;
+    let context = `YEAR: ${currentYear}\n\nBUDGETS:\n`;
+    if (budgets?.length) {
+      budgets.forEach((b) => {
+        const remaining = Number(b.allocated_amount) - Number(b.spent_amount);
+        context += `- ${b.year} ${b.category}: Allocated ₱${Number(b.allocated_amount).toLocaleString()}, Spent ₱${Number(b.spent_amount).toLocaleString()}, Rem. ₱${remaining.toLocaleString()}\n`;
+      });
+    } else {
+      context += 'No budget data.\n';
+    }
 
-  context += 'ALL BUDGET DATA:\n';
-  if (budgets && budgets.length > 0) {
-    budgets.forEach((b) => {
-      const remaining = Number(b.allocated_amount) - Number(b.spent_amount);
-      context += `- Year: ${b.year}, Category: ${b.category}, Allocated: ₱${Number(b.allocated_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}, Spent: ₱${Number(b.spent_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}, Remaining: ₱${remaining.toLocaleString('en-PH', { minimumFractionDigits: 2 })}\n`;
-    });
-  } else {
-    context += 'No budget data recorded in the system.\n';
+    context += '\nEVENTS:\n';
+    if (events?.length) {
+      events.forEach((e) => {
+        context += `- ${e.title} (${new Date(e.event_date).toLocaleDateString()}): ${e.location}. ${e.status}.\n`;
+      });
+    } else {
+      context += 'No events.\n';
+    }
+
+    context += '\nHOURS: Mon-Fri, 8AM-5PM.';
+    return context;
+  } catch (error) {
+    console.error('Context fetch error:', error);
+    return "Barangay information is currently being updated.";
   }
-
-  context += '\nALL EVENTS DATA:\n';
-  if (events && events.length > 0) {
-    events.forEach((e) => {
-      context += `- Title: ${e.title}, Date: ${new Date(e.event_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}, Location: ${e.location}, Status: ${e.status}. Description: ${e.description}\n`;
-    });
-  } else {
-    context += 'No events recorded in the system.\n';
-  }
-
-  context += '\nOFFICE HOURS: Monday to Friday, 8:00 AM to 5:00 PM (Closed on weekends and holidays).\n';
-
-  return context;
 }
+
