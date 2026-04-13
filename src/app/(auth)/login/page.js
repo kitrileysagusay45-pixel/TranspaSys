@@ -79,6 +79,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
+                suppressHydrationWarning
               />
             </div>
             <div className="form-group">
@@ -91,12 +92,14 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  suppressHydrationWarning
                 />
                 <button 
                   type="button" 
                   className="password-toggle" 
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  suppressHydrationWarning
                 >
                   <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
                 </button>
@@ -107,7 +110,7 @@ export default function LoginPage() {
                 Forgot Password?
               </a>
             </div>
-            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading} suppressHydrationWarning>
               {loading ? (
                 <span>Signing in...</span>
               ) : (

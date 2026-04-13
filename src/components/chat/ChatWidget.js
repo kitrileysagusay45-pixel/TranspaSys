@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 const categories = [
   { key: 'general', label: 'General' },
@@ -11,12 +12,49 @@ const categories = [
 ];
 
 export default function ChatWidget() {
+  const supabase = createClient();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([{ role: 'bot', content: 'Hello! How can I help you today? 😊' }]);
+  const [messages, setMessages] = useState([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [input, setInput] = useState('');
   const [category, setCategory] = useState('general');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Load persisted chat history from server on mount
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setMessages([{ role: 'bot', content: 'Hello! How can I help you with TranspaSys today? 😊' }]);
+          setHistoryLoaded(true);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('chatbot_conversations')
+          .select('user_message, bot_response, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(50);
+
+        if (error || !data || data.length === 0) {
+          setMessages([{ role: 'bot', content: 'Hello! How can I help you with TranspaSys today? 😊' }]);
+        } else {
+          const history = data.flatMap((c) => [
+            { role: 'user', content: c.user_message },
+            { role: 'bot', content: c.bot_response },
+          ]);
+          setMessages(history);
+        }
+      } catch {
+        setMessages([{ role: 'bot', content: 'Hello! How can I help you with TranspaSys today? 😊' }]);
+      }
+      setHistoryLoaded(true);
+    }
+    loadHistory();
+  }, []);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -63,7 +101,11 @@ export default function ChatWidget() {
             ))}
           </div>
           <div className="chat-widget-messages">
-            {messages.map((m, i) => (
+            {!historyLoaded ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
+                <div className="spinner" style={{ margin: 0, width: 28, height: 28 }}></div>
+              </div>
+            ) : messages.map((m, i) => (
               <div key={i} className={`chat-message-row ${m.role}`}>
                 {m.role === 'bot' && (
                   <div className="chat-avatar bot">
@@ -96,7 +138,7 @@ export default function ChatWidget() {
           </div>
           <form className="chat-widget-input" onSubmit={handleSend}>
             <input 
-              placeholder="Type your question..." 
+              placeholder="Ask about budgets, events..." 
               value={input} 
               onChange={(e) => setInput(e.target.value)} 
               disabled={loading}
@@ -122,4 +164,3 @@ export default function ChatWidget() {
     </div>
   );
 }
-

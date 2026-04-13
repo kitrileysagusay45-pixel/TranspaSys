@@ -312,11 +312,11 @@ export default function UserLayout({ children }) {
         .user-sidebar-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.4);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
           z-index: 2500;
-          animation: fadeIn 0.3s ease;
+          animation: fadeIn 0.25s ease;
         }
 
         @keyframes fadeIn {
@@ -328,7 +328,7 @@ export default function UserLayout({ children }) {
           background: none;
           border: none;
           color: var(--text-primary);
-          font-size: 1.6rem;
+          font-size: 1.5rem;
           padding: 8px;
           display: flex;
           align-items: center;
@@ -342,32 +342,34 @@ export default function UserLayout({ children }) {
 
         .menu-toggle-btn:hover, .menu-toggle-btn:active {
           background: rgba(255, 255, 255, 0.1);
-          transform: translateY(-1px);
         }
 
         .user-nav-links {
           position: fixed;
           top: 0;
           left: 0;
-          bottom: 0;
-          width: 300px;
-          /* Handle iOS Dynamic Viewport */
+          width: 280px;
+          max-width: 80vw;
           height: 100vh;
           height: 100dvh;
-          background: var(--bg-sidebar);
+          background: #0f0f1a;
           flex-direction: column;
           padding: 0;
           border-right: 1px solid var(--border);
           transform: translateX(-100%);
-          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
           z-index: 5000;
           display: flex !important;
-          box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+          box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
-          /* Safe area for notched devices */
           padding-top: env(safe-area-inset-top, 0px);
           padding-bottom: env(safe-area-inset-bottom, 0px);
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          box-sizing: border-box;
         }
 
         .user-nav-links.open {
@@ -375,16 +377,17 @@ export default function UserLayout({ children }) {
         }
 
         .menu-header {
-          padding: 30px 24px;
+          padding: 24px 20px;
           border-bottom: 1px solid var(--border);
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 16px;
+          margin-bottom: 8px;
+          flex-shrink: 0;
         }
 
         .menu-header h3 {
-          font-size: 1.3rem;
+          font-size: 1.2rem;
           font-weight: 800;
           color: var(--text-primary);
           letter-spacing: -0.5px;
@@ -395,39 +398,45 @@ export default function UserLayout({ children }) {
           border: none;
           color: var(--text-secondary);
           font-size: 1.2rem;
-          width: 36px;
-          height: 36px;
+          width: 40px;
+          height: 40px;
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .menu-header button:hover {
+          background: rgba(255, 255, 255, 0.1);
         }
 
         .user-nav-link {
-          width: calc(100% - 32px);
-          margin: 6px 16px;
-          padding: 16px 20px;
-          font-size: 1.05rem;
-          border-radius: 14px;
-          gap: 16px;
+          width: calc(100% - 24px);
+          margin: 4px 12px;
+          padding: 14px 18px;
+          font-size: 0.98rem;
+          border-radius: 12px;
+          gap: 14px;
           display: flex;
           align-items: center;
           text-decoration: none;
           color: var(--text-secondary);
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          flex-shrink: 0;
         }
 
         .user-nav-link i {
-          font-size: 1.3rem;
-          width: 24px;
+          font-size: 1.2rem;
+          width: 22px;
           text-align: center;
+          flex-shrink: 0;
         }
 
         .user-nav-link:hover {
           background: rgba(255, 255, 255, 0.05);
           color: var(--text-primary);
-          padding-left: 24px;
         }
 
         .user-nav-link.active {
@@ -441,6 +450,7 @@ export default function UserLayout({ children }) {
         @media (max-width: 480px) {
           .user-nav-links {
             width: 85vw;
+            max-width: 300px;
           }
           .user-nav-text h2 {
             font-size: 1rem;
