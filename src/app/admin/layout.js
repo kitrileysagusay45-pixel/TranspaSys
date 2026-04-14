@@ -153,6 +153,7 @@ export default function AdminLayout({ children }) {
         </div>
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">Navigation</div>
+          <ThemeToggle asSidebarLink className="sidebar-link" onClick={() => setSidebarOpen(false)} />
           {adminLinks.map((link) => (
             <Link
               key={link.href}
@@ -174,7 +175,6 @@ export default function AdminLayout({ children }) {
               <div className="name">{user?.name || 'Admin'}</div>
               <div className="role">{user?.role || 'admin'}</div>
             </div>
-            <ThemeToggle />
           </div>
           <button className="sidebar-link danger" onClick={handleLogout} style={{ marginTop: 8 }}>
             <i className="bi bi-box-arrow-right"></i> Logout
@@ -217,14 +217,14 @@ export default function AdminLayout({ children }) {
             bottom: 0;
             width: 280px;
             /* Handle iOS Dynamic Viewport */
-            height: 100vh;
-            height: 100dvh;
+            min-height: 100vh;
+            height: 100%;
             z-index: 3000;
             transform: translateX(-100%);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
             /* Safe area for notched devices */
-            padding-top: env(safe-area-inset-top, 0px);
+            padding-top: max(1rem, env(safe-area-inset-top, 0px));
             padding-bottom: env(safe-area-inset-bottom, 0px);
           }
 

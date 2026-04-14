@@ -64,7 +64,15 @@ export default function UserEvents() {
 
   return (
     <>
-      <div className="user-page-header-wrapper"><div className="user-container"><h1 className="user-page-title">Upcoming Events</h1><p className="user-page-subtitle">Browse and register for barangay events</p></div></div>
+      <div className="user-page-header-wrapper">
+        <div className="user-container">
+          <Link href="/user/dashboard" className="nav-back-btn">
+            <i className="bi bi-arrow-left"></i> <span>Back to Dashboard</span>
+          </Link>
+          <h1 className="user-page-title">Upcoming Events</h1>
+          <p className="user-page-subtitle">Browse and register for barangay events</p>
+        </div>
+      </div>
       <div className="user-container user-content-wrapper">
         <div className="card">
           <div className="card-body">
@@ -89,6 +97,35 @@ export default function UserEvents() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .nav-back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--primary);
+          text-decoration: none;
+          margin-bottom: 20px;
+          font-family: inherit;
+          font-weight: 500;
+          font-size: 0.95rem;
+          min-height: 44px; /* comfortable mobile tap target */
+          transition: all 0.2s ease;
+        }
+        .nav-back-btn i {
+          font-size: 1.1rem;
+          transition: transform 0.2s;
+        }
+        .nav-back-btn:hover {
+          color: var(--primary-light);
+        }
+        .nav-back-btn:hover i {
+          transform: translateX(-4px);
+        }
+        .nav-back-btn:hover span {
+          text-decoration: underline;
+        }
+      `}</style>
     </>
   );
 }

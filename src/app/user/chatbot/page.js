@@ -3,6 +3,51 @@
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+// Lightweight markdown → HTML parser for bot responses
+function formatBotMessage(text) {
+  if (!text) return '';
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const lines = html.split('\n');
+  const result = [];
+  let inList = false;
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (!line) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      result.push('<div class="chat-spacer"></div>');
+      continue;
+    }
+    if (/^\*\*(.+?)\*\*$/.test(line)) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      line = line.replace(/^\*\*(.+?)\*\*$/, '<strong class="chat-heading">$1</strong>');
+      result.push(line);
+      continue;
+    }
+    if (/^[-•*]\s+/.test(line)) {
+      if (!inList) { result.push('<ul class="chat-list">'); inList = true; }
+      let content = line.replace(/^[-•*]\s+/, '');
+      content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      result.push(`<li>${content}</li>`);
+      continue;
+    }
+    if (/^\d+\.\s+/.test(line)) {
+      if (!inList) { result.push('<ul class="chat-list numbered">'); inList = true; }
+      let content = line.replace(/^\d+\.\s+/, '');
+      content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      result.push(`<li>${content}</li>`);
+      continue;
+    }
+    if (inList) { result.push('</ul>'); inList = false; }
+    line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    result.push(`<p class="chat-para">${line}</p>`);
+  }
+  if (inList) result.push('</ul>');
+  return result.join('');
+}
+
 const categories = [
   { key: 'general', label: 'General' },
   { key: 'budget', label: '💰 Budget' },
@@ -82,7 +127,9 @@ export default function UserChatbot() {
                 <div className="empty-state"><i className="bi bi-robot"></i><p>Start a conversation!</p></div>
               ) : messages.map((m, i) => (
                 <div key={i} className={`chat-bubble ${m.role === 'user' ? 'user' : 'bot'}`}>
-                  {m.content}
+                  {m.role === 'bot' ? (
+                    <div className="bot-formatted" dangerouslySetInnerHTML={{ __html: formatBotMessage(m.content) }} />
+                  ) : m.content}
                 </div>
               ))}
               {loading && (

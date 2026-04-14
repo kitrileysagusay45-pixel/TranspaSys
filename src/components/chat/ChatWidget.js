@@ -3,6 +3,69 @@
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+// Lightweight markdown → HTML parser for bot responses
+function formatBotMessage(text) {
+  if (!text) return '';
+  
+  // Escape HTML entities first for safety
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Split into lines
+  const lines = html.split('\n');
+  const result = [];
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+
+    if (!line) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      result.push('<div class="chat-spacer"></div>');
+      continue;
+    }
+
+    // Headings: **Text** on its own line (bold heading)
+    if (/^\*\*(.+?)\*\*$/.test(line)) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      line = line.replace(/^\*\*(.+?)\*\*$/, '<strong class="chat-heading">$1</strong>');
+      result.push(line);
+      continue;
+    }
+
+    // Bullet points: - text or • text or * text
+    if (/^[-•*]\s+/.test(line)) {
+      if (!inList) { result.push('<ul class="chat-list">'); inList = true; }
+      let content = line.replace(/^[-•*]\s+/, '');
+      // Inline bold
+      content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      result.push(`<li>${content}</li>`);
+      continue;
+    }
+
+    // Numbered list: 1. text
+    if (/^\d+\.\s+/.test(line)) {
+      if (!inList) { result.push('<ul class="chat-list numbered">'); inList = true; }
+      let content = line.replace(/^\d+\.\s+/, '');
+      content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      result.push(`<li>${content}</li>`);
+      continue;
+    }
+
+    // Regular line — close list if open
+    if (inList) { result.push('</ul>'); inList = false; }
+
+    // Inline bold
+    line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    result.push(`<p class="chat-para">${line}</p>`);
+  }
+
+  if (inList) result.push('</ul>');
+  return result.join('');
+}
+
 const categories = [
   { key: 'general', label: 'General' },
   { key: 'budget', label: '💰 Budget' },
@@ -113,7 +176,9 @@ export default function ChatWidget() {
                   </div>
                 )}
                 <div className={`chat-bubble ${m.role}`}>
-                  {m.content}
+                  {m.role === 'bot' ? (
+                    <div className="bot-formatted" dangerouslySetInnerHTML={{ __html: formatBotMessage(m.content) }} />
+                  ) : m.content}
                 </div>
                 {m.role === 'user' && (
                   <div className="chat-avatar user">

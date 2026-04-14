@@ -183,6 +183,7 @@ export default function UserLayout({ children }) {
           <h3>Menu</h3>
           <button onClick={() => setMenuOpen(false)} aria-label="Close Menu"><i className="bi bi-x-lg"></i></button>
         </div>
+        <ThemeToggle asSidebarLink className="user-nav-link" onClick={() => setMenuOpen(false)} />
         {userLinks.map((link) => (
           <Link
             key={link.href}
@@ -216,7 +217,6 @@ export default function UserLayout({ children }) {
           </div>
           
           <div className="user-nav-right">
-            <ThemeToggle />
             <div className="user-profile-btn">
               <div className="user-avatar">{initials}</div>
               <span className="user-name">{user?.name || 'User'}</span>
@@ -350,10 +350,12 @@ export default function UserLayout({ children }) {
           left: 0;
           width: 280px;
           max-width: 80vw;
-          height: 100vh;
-          height: 100dvh;
+          min-height: 100vh;
+          height: 100%;
           background: #0f0f1a;
           flex-direction: column;
+          justify-content: flex-start;
+          align-items: flex-start;
           padding: 0;
           border-right: 1px solid var(--border);
           transform: translateX(-100%);
@@ -363,7 +365,7 @@ export default function UserLayout({ children }) {
           box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
-          padding-top: env(safe-area-inset-top, 0px);
+          padding-top: max(1rem, env(safe-area-inset-top, 0px));
           padding-bottom: env(safe-area-inset-bottom, 0px);
           overflow-y: auto;
           overflow-x: hidden;
@@ -377,6 +379,7 @@ export default function UserLayout({ children }) {
         }
 
         .menu-header {
+          width: 100%;
           padding: 24px 20px;
           border-bottom: 1px solid var(--border);
           display: flex;
