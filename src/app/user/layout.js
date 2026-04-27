@@ -183,7 +183,7 @@ export default function UserLayout({ children }) {
           <h3>Menu</h3>
           <button onClick={() => setMenuOpen(false)} aria-label="Close Menu"><i className="bi bi-x-lg"></i></button>
         </div>
-        <ThemeToggle asSidebarLink className="user-nav-link" onClick={() => setMenuOpen(false)} />
+
         {userLinks.map((link) => (
           <Link
             key={link.href}
@@ -217,10 +217,12 @@ export default function UserLayout({ children }) {
           </div>
           
           <div className="user-nav-right">
+            <ThemeToggle className="theme-toggle-btn" />
             <div className="user-profile-btn">
               <div className="user-avatar">{initials}</div>
               <span className="user-name">{user?.name || 'User'}</span>
             </div>
+
             <button className="user-logout-btn" onClick={handleLogout} title="Logout">
               <i className="bi bi-box-arrow-right"></i>
             </button>

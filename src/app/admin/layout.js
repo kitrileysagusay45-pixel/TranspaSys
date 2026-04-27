@@ -153,7 +153,7 @@ export default function AdminLayout({ children }) {
         </div>
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">Navigation</div>
-          <ThemeToggle asSidebarLink className="sidebar-link" onClick={() => setSidebarOpen(false)} />
+
           {adminLinks.map((link) => (
             <Link
               key={link.href}
@@ -194,8 +194,10 @@ export default function AdminLayout({ children }) {
             <div className="topbar-title">{currentLink?.label || 'Admin Dashboard'}</div>
           </div>
           <div className="topbar-right">
+            <ThemeToggle className="mr-2" />
             <span className="topbar-badge">Admin</span>
           </div>
+
         </header>
         {children}
       </div>
